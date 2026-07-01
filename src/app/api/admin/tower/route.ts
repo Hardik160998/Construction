@@ -42,6 +42,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get('projectId');
+    const id = searchParams.get('id');
     
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -53,6 +54,9 @@ export async function GET(request: Request) {
     if (projectId) {
       query = query.eq('project_id', projectId);
     }
+    if (id) {
+      query = query.eq('id', id);
+    }
 
     const { data, error } = await query;
 
@@ -62,5 +66,37 @@ export async function GET(request: Request) {
   } catch (error: any) {
     console.error('API Error:', error);
     return NextResponse.json({ error: 'Failed to fetch towers.' }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const { id, updates } = body;
+
+    if (!id || !updates || Object.keys(updates).length === 0) {
+      return NextResponse.json({ error: 'Missing tower id or updates payload' }, { status: 400 });
+    }
+
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+    );
+
+    const { data, error } = await supabaseAdmin
+      .from('tower')
+      .update(updates)
+      .eq('id', id)
+      .select();
+
+    if (error) {
+      console.error('Supabase Error:', error.message);
+      return NextResponse.json({ error: `Database Error: ${error.message}` }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, tower: data[0] });
+  } catch (error) {
+    console.error('API Error:', error);
+    return NextResponse.json({ error: 'Failed to update tower.' }, { status: 500 });
   }
 }

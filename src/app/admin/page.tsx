@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Building2, Plus, LogOut, CheckCircle2, AlertCircle, Users, HardHat, MapPin, Sparkles, ChevronRight, List, X, UploadCloud, Image as ImageIcon } from 'lucide-react';
+import { Building2, Plus, LogOut, CheckCircle2, AlertCircle, Users, HardHat, MapPin, Sparkles, ChevronRight, List, X, UploadCloud, Image as ImageIcon, Briefcase, CreditCard, BarChart2, ArrowRightLeft, TrendingUp, Megaphone, Building } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -17,13 +17,18 @@ export default function AdminDashboard() {
   const [builders, setBuilders] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
+  const [towers, setTowers] = useState<any[]>([]);
 
   // Show form toggles (now used for Modals)
   const [showBuilderForm, setShowBuilderForm] = useState(false);
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [showProjectForm, setShowProjectForm] = useState(false);
+  const [showTowerForm, setShowTowerForm] = useState(false);
+  
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [showCustomerDetailsModal, setShowCustomerDetailsModal] = useState(false);
+  const [selectedProjectForSidebar, setSelectedProjectForSidebar] = useState<any>(null);
+  const [activeProjectSubTab, setActiveProjectSubTab] = useState<'progress' | 'announcement' | 'flats' | 'staff' | null>(null);
 
   // Form States
   const [builderData, setBuilderData] = useState({
@@ -37,6 +42,18 @@ export default function AdminDashboard() {
   const [projectData, setProjectData] = useState({
     projectName: '', location: '', status: '', description: '', coverImgUrl: '', expectedPossession: '', customerId: ''
   });
+
+  const [towerData, setTowerData] = useState({
+    towerName: '', totalFloors: ''
+  });
+
+  useEffect(() => {
+    if (selectedProjectForSidebar) {
+      fetchTowers(selectedProjectForSidebar.id || selectedProjectForSidebar._id);
+    } else {
+      setTowers([]);
+    }
+  }, [selectedProjectForSidebar]);
 
   useEffect(() => {
     fetchBuilders();
@@ -85,6 +102,16 @@ export default function AdminDashboard() {
       if (data.success) setProjects(data.projects);
     } catch (err) {
       console.error('Failed to load projects', err);
+    }
+  };
+
+  const fetchTowers = async (projectId: string) => {
+    try {
+      const res = await fetch(`/api/admin/tower?projectId=${projectId}`);
+      const data = await res.json();
+      if (data.success) setTowers(data.towers || []);
+    } catch (err) {
+      console.error('Failed to load towers', err);
     }
   };
 
@@ -204,6 +231,43 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleTowerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTowerData({ ...towerData, [e.target.name]: e.target.value });
+  };
+
+  const handleTowerSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError(''); setSuccess(false);
+
+    try {
+      const response = await fetch('/api/admin/tower', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId: selectedProjectForSidebar?.id || selectedProjectForSidebar?._id,
+          towerName: towerData.towerName,
+          totalFloors: towerData.totalFloors
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to add tower');
+
+      setSuccess(true);
+      fetchTowers(selectedProjectForSidebar?.id || selectedProjectForSidebar?._id);
+      
+      setTimeout(() => {
+        setSuccess(false);
+        setShowTowerForm(false);
+        setTowerData({ towerName: '', totalFloors: '' });
+      }, 1500);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const menuItems = [
     { id: 'builder', label: 'Builder Matrix', icon: HardHat },
     { id: 'customer', label: 'Customer Network', icon: Users },
@@ -217,6 +281,7 @@ export default function AdminDashboard() {
     setShowBuilderForm(false);
     setShowCustomerForm(false);
     setShowProjectForm(false);
+    setActiveProjectSubTab(null);
     
     // Sync with URL
     window.history.pushState(null, '', `?tab=${tabId}`);
@@ -254,7 +319,7 @@ export default function AdminDashboard() {
       <div className="flex flex-1 overflow-hidden relative z-10">
         
         {/* Glassmorphic Sidebar */}
-        <aside className="w-80 bg-white/50 backdrop-blur-md border-r border-slate-200/60 p-6 shrink-0 flex flex-col gap-2">
+        <aside className="w-80 bg-white/50 backdrop-blur-md border-r border-slate-200/60 p-6 shrink-0 flex flex-col gap-2 relative overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-2 mb-4">
             <Sparkles className="w-4 h-4 text-blue-500" />
             <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Management</span>
@@ -264,30 +329,73 @@ export default function AdminDashboard() {
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
+              
               return (
-                <button 
-                  key={item.id}
-                  onClick={() => handleTabChange(item.id)}
-                  className={`group relative flex items-center justify-between w-full px-4 py-4 rounded-2xl font-semibold transition-all duration-300 overflow-hidden ${
-                    isActive 
-                      ? 'text-blue-700 shadow-[0_0_20px_rgba(59,130,246,0.1)] border-blue-200/50' 
-                      : 'text-slate-600 hover:text-slate-900 border-transparent hover:bg-slate-200/40'
-                  } border`}
-                >
-                  {/* Active Background Glow */}
-                  {isActive && (
-                    <motion.div layoutId="activeTab" className="absolute inset-0 bg-gradient-to-r from-blue-50 to-violet-50 rounded-2xl" />
-                  )}
-                  
-                  <div className="relative z-10 flex items-center gap-4 whitespace-nowrap">
-                    <div className={`p-2 rounded-xl transition-colors duration-300 ${isActive ? 'bg-blue-100/50 text-blue-600' : 'bg-slate-100 group-hover:bg-slate-200'}`}>
-                      <Icon className="w-5 h-5" />
+                <div key={item.id} className="flex flex-col">
+                  <button 
+                    onClick={() => handleTabChange(item.id)}
+                    className={`group relative flex items-center justify-between w-full px-4 py-4 rounded-2xl font-semibold transition-all duration-300 overflow-hidden ${
+                      isActive 
+                        ? 'text-blue-700 shadow-[0_0_20px_rgba(59,130,246,0.1)] border-blue-200/50' 
+                        : 'text-slate-600 hover:text-slate-900 border-transparent hover:bg-slate-200/40'
+                    } border`}
+                  >
+                    {/* Active Background Glow */}
+                    {isActive && (
+                      <motion.div layoutId="activeTab" className="absolute inset-0 bg-gradient-to-r from-blue-50 to-violet-50 rounded-2xl" />
+                    )}
+                    
+                    <div className="relative z-10 flex items-center gap-4 whitespace-nowrap">
+                      <div className={`p-2 rounded-xl transition-colors duration-300 ${isActive ? 'bg-blue-100/50 text-blue-600' : 'bg-slate-100 group-hover:bg-slate-200'}`}>
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <span className="truncate">{item.label}</span>
                     </div>
-                    <span className="truncate">{item.label}</span>
-                  </div>
+                    
+                    {isActive && <ChevronRight className={`w-4 h-4 text-blue-600 relative z-10 transition-transform duration-300 ${item.id === 'project' && selectedProjectForSidebar ? 'rotate-90' : ''}`} />}
+                  </button>
                   
-                  {isActive && <ChevronRight className="w-4 h-4 text-blue-600 relative z-10" />}
-                </button>
+                  {/* Collapsible Sub-menu for Project Registry */}
+                  <AnimatePresence>
+                    {item.id === 'project' && selectedProjectForSidebar && activeTab === 'project' && (
+                      <motion.div 
+                        initial={{ height: 0, opacity: 0 }} 
+                        animate={{ height: 'auto', opacity: 1 }} 
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden flex flex-col mt-3 pl-3 pr-2"
+                      >
+                        <div className="flex items-center justify-between px-4 py-3.5 mb-2 bg-white shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-slate-100/60 rounded-2xl group relative z-20">
+                          <div className="flex items-center gap-3 overflow-hidden">
+                            <Briefcase className="w-[18px] h-[18px] text-blue-600 shrink-0" />
+                            <span className="text-[14px] font-bold text-slate-700 truncate pr-2">{selectedProjectForSidebar.project_name}</span>
+                          </div>
+                          <button onClick={(e) => { e.stopPropagation(); setSelectedProjectForSidebar(null); setActiveProjectSubTab(null); }} className="p-1 bg-white border border-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors shadow-sm shrink-0 flex items-center justify-center">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        
+                        <div className="flex flex-col gap-1 relative before:absolute before:left-[22px] before:top-2 before:bottom-4 before:w-[1.5px] before:bg-slate-100/80 before:rounded-full">
+                          <button onClick={() => setActiveProjectSubTab('progress')} className={`w-full flex items-center gap-4 px-4 py-3 relative z-10 group transition-all rounded-xl ${activeProjectSubTab === 'progress' ? 'bg-blue-50/50' : ''}`}>
+                            <div className="bg-[#f4f7f9] z-10 relative"><TrendingUp className={`w-[18px] h-[18px] transition-colors ${activeProjectSubTab === 'progress' ? 'text-blue-600' : 'text-slate-500 group-hover:text-blue-500'}`} /></div>
+                            <span className={`text-[14.5px] font-bold transition-colors ${activeProjectSubTab === 'progress' ? 'text-blue-700' : 'text-slate-600 group-hover:text-slate-800'}`}>Progress</span>
+                          </button>
+                          <button onClick={() => setActiveProjectSubTab('announcement')} className={`w-full flex items-center gap-4 px-4 py-3 relative z-10 group transition-all rounded-xl ${activeProjectSubTab === 'announcement' ? 'bg-blue-50/50' : ''}`}>
+                            <div className="bg-[#f4f7f9] z-10 relative"><Megaphone className={`w-[18px] h-[18px] transition-colors ${activeProjectSubTab === 'announcement' ? 'text-blue-600' : 'text-slate-500 group-hover:text-blue-500'}`} /></div>
+                            <span className={`text-[14.5px] font-bold transition-colors ${activeProjectSubTab === 'announcement' ? 'text-blue-700' : 'text-slate-600 group-hover:text-slate-800'}`}>Announcement</span>
+                          </button>
+                          <button onClick={() => setActiveProjectSubTab('flats')} className={`w-full flex items-center gap-4 px-4 py-3 relative z-10 group transition-all rounded-xl ${activeProjectSubTab === 'flats' ? 'bg-blue-50/50' : ''}`}>
+                            <div className="bg-[#f4f7f9] z-10 relative"><Building className={`w-[18px] h-[18px] transition-colors ${activeProjectSubTab === 'flats' ? 'text-blue-600' : 'text-slate-500 group-hover:text-blue-500'}`} /></div>
+                            <span className={`text-[14.5px] font-bold transition-colors ${activeProjectSubTab === 'flats' ? 'text-blue-700' : 'text-slate-600 group-hover:text-slate-800'}`}>Flats</span>
+                          </button>
+                          <button onClick={() => setActiveProjectSubTab('staff')} className={`w-full flex items-center gap-4 px-4 py-3 relative z-10 group transition-all rounded-xl ${activeProjectSubTab === 'staff' ? 'bg-blue-50/50' : ''}`}>
+                            <div className="bg-[#f4f7f9] z-10 relative"><Users className={`w-[18px] h-[18px] transition-colors ${activeProjectSubTab === 'staff' ? 'text-blue-600' : 'text-slate-500 group-hover:text-blue-500'}`} /></div>
+                            <span className={`text-[14.5px] font-bold transition-colors ${activeProjectSubTab === 'staff' ? 'text-blue-700' : 'text-slate-600 group-hover:text-slate-800'}`}>Staff</span>
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               );
             })}
           </div>
@@ -297,7 +405,57 @@ export default function AdminDashboard() {
         <main className="flex-1 overflow-y-auto p-8 lg:p-12 relative">
            <div className="w-full max-w-none">
               
-              {/* Header */}
+              {activeProjectSubTab && selectedProjectForSidebar ? (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6 mt-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <button onClick={() => setActiveProjectSubTab(null)} className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-slate-700 shadow-sm transition-colors">
+                        <ChevronRight className="w-5 h-5 rotate-180" />
+                      </button>
+                      <div>
+                        <h2 className="text-2xl font-extrabold text-slate-900 capitalize flex items-center gap-2">
+                          {selectedProjectForSidebar.project_name}
+                        </h2>
+                        <p className="text-sm font-medium text-slate-500 mt-1">
+                          Location: <span className="font-semibold text-slate-700">{selectedProjectForSidebar.location || 'N/A'}</span>
+                        </p>
+                      </div>
+                    </div>
+                    <button onClick={() => setShowTowerForm(true)} className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-bold rounded-xl transition-all shadow-[0_4px_15px_rgba(59,130,246,0.3)] hover:shadow-[0_6px_20px_rgba(59,130,246,0.4)]">
+                      <Plus className="w-4 h-4" /> Add Tower
+                    </button>
+                  </div>
+
+                  {activeProjectSubTab === 'progress' && towers.length > 0 ? (
+                    <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {towers.map(tower => (
+                        <div key={tower.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow group flex flex-col justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                              <Building className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <h3 className="text-xl font-bold text-slate-900 mb-0.5">{tower.tower_name}</h3>
+                              <p className="text-sm font-semibold text-slate-500">{tower.total_floors} Floors</p>
+                            </div>
+                          </div>
+                          <Link href={`/admin/tower/${encodeURIComponent(tower.tower_name)}?id=${tower.id}`} className="mt-6 w-full block text-center py-2.5 bg-slate-50 text-slate-700 font-bold rounded-xl hover:bg-slate-100 transition-colors text-sm">
+                            Manage Progress
+                          </Link>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="mt-8 flex items-center justify-center min-h-[400px]">
+                      <p className="text-center text-slate-400/80 font-medium text-lg tracking-wide">
+                        No {activeProjectSubTab} records found for this project.
+                      </p>
+                    </div>
+                  )}
+                </motion.div>
+              ) : (
+                <>
+                  {/* Header */}
               <motion.div 
                 key={`header-${activeTab}`}
                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
@@ -431,9 +589,8 @@ export default function AdminDashboard() {
                       </table>
                     </div>
                   )}
-
                   {/* PROJECT LIST VIEW */}
-                  {activeTab === 'project' && (
+                  {activeTab === 'project' && !activeProjectSubTab && (
                     <div className="overflow-x-auto -mx-4 sm:-mx-0">
                       <table className="w-full text-left border-collapse min-w-[600px]">
                         <thead>
@@ -468,9 +625,12 @@ export default function AdminDashboard() {
                                   </span>
                                 </td>
                                 <td className="py-5 px-4 text-right">
-                                  <Link href={`/admin/projects/${project.id || project._id}`} className="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors">
+                                  <button 
+                                    onClick={() => setSelectedProjectForSidebar(project)}
+                                    className="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors"
+                                  >
                                     View
-                                  </Link>
+                                  </button>
                                 </td>
                               </tr>
                             ))
@@ -481,6 +641,8 @@ export default function AdminDashboard() {
                   )}
                 </div>
               </motion.div>
+              </>
+              )}
            </div>
         </main>
       </div>
@@ -773,6 +935,53 @@ export default function AdminDashboard() {
                     <p className="font-bold text-slate-900">{selectedCustomer.tower_name || 'N/A'}</p>
                   </div>
                 </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Add Tower Modal */}
+      <AnimatePresence>
+        {showTowerForm && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+              <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-inner">
+                    <Building className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-slate-900 tracking-tight">Add Tower</h2>
+                    <p className="text-sm font-semibold text-slate-500">Configure tower details</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowTowerForm(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="p-8 overflow-y-auto bg-white">
+                {error && <div className="mb-6 p-4 bg-red-50 text-red-600 border border-red-100 rounded-xl font-semibold text-sm flex items-center gap-3"><AlertCircle className="w-5 h-5 shrink-0" />{error}</div>}
+                {success && <div className="mb-6 p-4 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl font-semibold text-sm flex items-center gap-3"><CheckCircle2 className="w-5 h-5 shrink-0" />Tower added successfully!</div>}
+                
+                {!success && (
+                  <form onSubmit={handleTowerSubmit} className="space-y-6">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Tower Name / Number</label>
+                      <input type="text" name="towerName" required value={towerData.towerName} onChange={handleTowerChange} placeholder="e.g. Tower A" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Total Floors</label>
+                      <input type="number" name="totalFloors" required min="1" value={towerData.totalFloors} onChange={handleTowerChange} placeholder="e.g. 15" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
+                    </div>
+                    <div className="pt-6 mt-4 flex justify-end border-t border-slate-100">
+                      <button type="submit" disabled={isSubmitting} className="group relative px-8 py-3.5 bg-slate-900 text-white font-extrabold rounded-xl shadow-[0_10px_20px_rgba(0,0,0,0.1)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 min-w-[160px] flex justify-center items-center">
+                        {isSubmitting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Save Tower'}
+                      </button>
+                    </div>
+                  </form>
+                )}
               </div>
             </motion.div>
           </motion.div>
