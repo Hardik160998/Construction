@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { projectName, location, status, description, coverImgUrl, expectedPossession } = body;
+    const { projectName, location, status, description, coverImgUrl, expectedPossession, customerId } = body;
 
     if (!projectName) {
       return NextResponse.json({ error: 'Project name is required' }, { status: 400 });
@@ -25,6 +25,7 @@ export async function POST(request: Request) {
           description: description || null,
           cover_img_url: coverImgUrl || null,
           expected_possession: expectedPossession || null,
+          customer_id: customerId || null,
         }
       ])
       .select();
@@ -50,7 +51,7 @@ export async function GET(request: Request) {
 
     const { data, error } = await supabaseAdmin
       .from('project')
-      .select('id, project_name, location, status, description, cover_img_url, expected_possession, created_at')
+      .select('id, project_name, location, status, description, cover_img_url, expected_possession, customer_id, created_at')
       .order('created_at', { ascending: false });
 
     if (error) throw error;

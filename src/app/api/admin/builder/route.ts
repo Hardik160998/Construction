@@ -10,7 +10,7 @@ export async function GET() {
 
     const { data, error } = await supabaseAdmin
       .from('builder')
-      .select('id, company_name, contact_name, email, phone, project_id, created_at')
+      .select('id, company_name, contact_name, email, phone, created_at')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -26,7 +26,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { companyName, contactName, email, phone, projectId } = body;
+    const { companyName, contactName, email, phone } = body;
 
     if (!companyName || !contactName || !email) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -45,7 +45,6 @@ export async function POST(request: Request) {
           contact_name: contactName,
           email: email,
           phone: phone || null,
-          project_id: projectId || null,
         }
       ])
       .select();
@@ -74,7 +73,6 @@ export async function POST(request: Request) {
             contact_name text NOT NULL,
             email text UNIQUE NOT NULL,
             phone text,
-            project_id text,
             created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
           );
         `);
@@ -107,7 +105,6 @@ export async function POST(request: Request) {
               contact_name: contactName,
               email: email,
               phone: phone || null,
-              project_id: projectId || null,
             }
           ])
           .select();

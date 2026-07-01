@@ -22,6 +22,8 @@ export default function AdminDashboard() {
   const [showBuilderForm, setShowBuilderForm] = useState(false);
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [showProjectForm, setShowProjectForm] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [showCustomerDetailsModal, setShowCustomerDetailsModal] = useState(false);
 
   // Form States
   const [builderData, setBuilderData] = useState({
@@ -29,17 +31,31 @@ export default function AdminDashboard() {
   });
 
   const [customerData, setCustomerData] = useState({
-    builderId: '', firstName: '', lastName: '', email: '', phone: '', projectId: '',
+    builderId: '', firstName: '', lastName: '', email: '', phone: '', floor: '', towerName: ''
   });
 
   const [projectData, setProjectData] = useState({
-    projectName: '', location: '', status: '', description: '', coverImgUrl: '', expectedPossession: ''
+    projectName: '', location: '', status: '', description: '', coverImgUrl: '', expectedPossession: '', customerId: ''
   });
 
   useEffect(() => {
     fetchBuilders();
     fetchCustomers();
     fetchProjects();
+
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab');
+      if (tab === 'builder' || tab === 'customer' || tab === 'project') {
+        setActiveTab(tab);
+      }
+    };
+
+    // Initial check
+    handlePopState();
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   const fetchBuilders = async () => {
@@ -154,7 +170,7 @@ export default function AdminDashboard() {
       if (!response.ok) throw new Error(data.error || 'Failed to add customer');
 
       setSuccess(true);
-      setCustomerData({ builderId: customerData.builderId, firstName: '', lastName: '', email: '', phone: '', projectId: '' });
+      setCustomerData({ builderId: customerData.builderId, firstName: '', lastName: '', email: '', phone: '', floor: '', towerName: '' });
       fetchCustomers();
       setTimeout(() => { setSuccess(false); setShowCustomerForm(false); }, 2000);
     } catch (err: any) {
@@ -178,7 +194,7 @@ export default function AdminDashboard() {
       if (!response.ok) throw new Error(data.error || 'Failed to add project');
 
       setSuccess(true);
-      setProjectData({ projectName: '', location: '', status: '', description: '', coverImgUrl: '', expectedPossession: '' });
+      setProjectData({ projectName: '', location: '', status: '', description: '', coverImgUrl: '', expectedPossession: '', customerId: '' });
       fetchProjects();
       setTimeout(() => { setSuccess(false); setShowProjectForm(false); }, 2000);
     } catch (err: any) {
@@ -201,6 +217,9 @@ export default function AdminDashboard() {
     setShowBuilderForm(false);
     setShowCustomerForm(false);
     setShowProjectForm(false);
+    
+    // Sync with URL
+    window.history.pushState(null, '', `?tab=${tabId}`);
   };
 
   return (
@@ -343,7 +362,7 @@ export default function AdminDashboard() {
                             <th className="pb-4 px-4">Company Name</th>
                             <th className="pb-4 px-4">Contact</th>
                             <th className="pb-4 px-4">Email</th>
-                            <th className="pb-4 px-4 text-right">Project ID</th>
+                            <th className="pb-4 px-4">Mobile No</th>
                           </tr>
                         </thead>
                         <tbody className="text-slate-700">
@@ -359,15 +378,7 @@ export default function AdminDashboard() {
                                 <td className="py-5 px-4 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{builder.company_name}</td>
                                 <td className="py-5 px-4 text-slate-600 font-medium">{builder.contact_name}</td>
                                 <td className="py-5 px-4 text-slate-600 font-medium">{builder.email}</td>
-                                <td className="py-5 px-4 text-right">
-                                  {builder.project_id ? (
-                                    <span className="inline-block px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-extrabold tracking-wider border border-blue-200">
-                                      {builder.project_id}
-                                    </span>
-                                  ) : (
-                                    <span className="text-slate-400 font-medium text-sm">N/A</span>
-                                  )}
-                                </td>
+                                <td className="py-5 px-4 text-slate-600 font-medium">{builder.phone || 'N/A'}</td>
                               </tr>
                             ))
                           )}
@@ -384,14 +395,15 @@ export default function AdminDashboard() {
                           <tr className="border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
                             <th className="pb-4 px-4">Name</th>
                             <th className="pb-4 px-4">Email</th>
-                            <th className="pb-4 px-4">Builder ID</th>
-                            <th className="pb-4 px-4 text-right">Project ID</th>
+                            <th className="pb-4 px-4">Contact No</th>
+                            <th className="pb-4 px-4">Builder Name</th>
+                            <th className="pb-4 px-4 text-right">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="text-slate-700">
                           {customers.length === 0 ? (
                             <tr>
-                              <td colSpan={4} className="py-12 text-center text-slate-500 font-medium">
+                              <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
                                 No customers added yet. Click 'Add Customer' to initialize one.
                               </td>
                             </tr>
@@ -400,15 +412,17 @@ export default function AdminDashboard() {
                               <tr key={customer.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group">
                                 <td className="py-5 px-4 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{customer.first_name} {customer.last_name}</td>
                                 <td className="py-5 px-4 text-slate-600 font-medium">{customer.email}</td>
-                                <td className="py-5 px-4 text-slate-600 font-medium text-xs">{customer.builder_id?.substring(0, 8)}...</td>
+                                <td className="py-5 px-4 text-slate-600 font-medium">{customer.phone || 'N/A'}</td>
+                                <td className="py-5 px-4 text-slate-600 font-medium">
+                                  {builders.find(b => b.id === customer.builder_id)?.contact_name || 'N/A'}
+                                </td>
                                 <td className="py-5 px-4 text-right">
-                                  {customer.project_id ? (
-                                    <span className="inline-block px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-xs font-extrabold tracking-wider border border-emerald-200">
-                                      {customer.project_id}
-                                    </span>
-                                  ) : (
-                                    <span className="text-slate-400 font-medium text-sm">N/A</span>
-                                  )}
+                                  <button 
+                                    onClick={() => { setSelectedCustomer(customer); setShowCustomerDetailsModal(true); }}
+                                    className="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors"
+                                  >
+                                    View
+                                  </button>
                                 </td>
                               </tr>
                             ))
@@ -426,13 +440,15 @@ export default function AdminDashboard() {
                           <tr className="border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
                             <th className="pb-4 px-4">Project Name</th>
                             <th className="pb-4 px-4">Location</th>
+                            <th className="pb-4 px-4">Expected Possession</th>
                             <th className="pb-4 px-4 text-right">Status</th>
+                            <th className="pb-4 px-4 text-right">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="text-slate-700">
                           {projects.length === 0 ? (
                             <tr>
-                              <td colSpan={3} className="py-12 text-center text-slate-500 font-medium">
+                              <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
                                 No projects registered yet. Click 'Add Project' to initialize one.
                               </td>
                             </tr>
@@ -441,6 +457,7 @@ export default function AdminDashboard() {
                               <tr key={project.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group">
                                 <td className="py-5 px-4 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{project.project_name}</td>
                                 <td className="py-5 px-4 text-slate-600 font-medium">{project.location || 'N/A'}</td>
+                                <td className="py-5 px-4 text-slate-600 font-medium">{project.expected_possession || project.expectedPossession || 'N/A'}</td>
                                 <td className="py-5 px-4 text-right">
                                   <span className={`inline-block px-3 py-1 rounded-full text-xs font-extrabold tracking-wider border ${
                                     project.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 
@@ -449,6 +466,11 @@ export default function AdminDashboard() {
                                   }`}>
                                     {project.status || 'Planning'}
                                   </span>
+                                </td>
+                                <td className="py-5 px-4 text-right">
+                                  <Link href={`/admin/projects/${project.id || project._id}`} className="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors">
+                                    View
+                                  </Link>
                                 </td>
                               </tr>
                             ))
@@ -537,10 +559,7 @@ export default function AdminDashboard() {
                         <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Phone Number</label>
                         <input type="tel" name="phone" value={builderData.phone} onChange={handleBuilderChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="+1 (555) 000-0000" />
                       </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Project ID</label>
-                        <input type="text" name="projectId" value={builderData.projectId} onChange={handleBuilderChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. PRJ-1001" />
-                      </div>
+
                     </div>
                     <div className="pt-6 mt-4 flex justify-end border-t border-slate-100">
                       <button type="submit" disabled={isSubmitting || success} className="group relative px-8 py-3.5 bg-slate-900 text-white font-extrabold rounded-xl shadow-[0_10px_20px_rgba(0,0,0,0.1)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:hover:translate-y-0 min-w-[160px] flex justify-center items-center overflow-hidden">
@@ -563,7 +582,7 @@ export default function AdminDashboard() {
                           >
                             <option value="" className="text-slate-400">-- Select a Builder --</option>
                             {builders.map(b => (
-                              <option key={b.id} value={b.id} className="text-slate-900">{b.company_name}</option>
+                              <option key={b.id} value={b.id} className="text-slate-900">{b.contact_name} ({b.company_name})</option>
                             ))}
                           </select>
                           <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -588,10 +607,15 @@ export default function AdminDashboard() {
                         <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Phone Number</label>
                         <input type="tel" name="phone" value={customerData.phone} onChange={handleCustomerChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="+1 (555) 000-0000" />
                       </div>
-                      <div className="sm:col-span-2">
-                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Project ID</label>
-                        <input type="text" name="projectId" value={customerData.projectId} onChange={handleCustomerChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. PRJ-1001" />
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Floor</label>
+                        <input type="text" name="floor" value={customerData.floor} onChange={handleCustomerChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. 14" />
                       </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Tower Name</label>
+                        <input type="text" name="towerName" value={customerData.towerName} onChange={handleCustomerChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. Tower A" />
+                      </div>
+
                     </div>
                     <div className="pt-6 mt-4 flex justify-end border-t border-slate-100">
                       <button type="submit" disabled={isSubmitting || success} className="group relative px-8 py-3.5 bg-slate-900 text-white font-extrabold rounded-xl shadow-[0_10px_20px_rgba(0,0,0,0.1)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:hover:translate-y-0 min-w-[160px] flex justify-center items-center overflow-hidden">
@@ -605,6 +629,23 @@ export default function AdminDashboard() {
                 {showProjectForm && (
                   <form onSubmit={handleProjectSubmit} className="space-y-6">
                     <div className="grid sm:grid-cols-2 gap-6">
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Assign to Customer</label>
+                        <div className="relative">
+                          <select 
+                            name="customerId" value={projectData.customerId} onChange={handleProjectChange}
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
+                          >
+                            <option value="" className="text-slate-400">-- Select a Customer (Optional) --</option>
+                            {customers.map(c => (
+                              <option key={c.id} value={c.id} className="text-slate-900">{c.first_name} {c.last_name}</option>
+                            ))}
+                          </select>
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
+                          </div>
+                        </div>
+                      </div>
                       <div className="sm:col-span-2">
                         <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Project Name *</label>
                         <input type="text" name="projectName" required value={projectData.projectName} onChange={handleProjectChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. Skyline Towers" />
@@ -669,7 +710,7 @@ export default function AdminDashboard() {
                       </div>
                       <div className="sm:col-span-2">
                         <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Expected Possession</label>
-                        <input type="text" name="expectedPossession" value={projectData.expectedPossession} onChange={handleProjectChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. Q4 2026" />
+                        <input type="date" name="expectedPossession" value={projectData.expectedPossession} onChange={handleProjectChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
                       </div>
                     </div>
                     <div className="pt-6 mt-4 flex justify-end border-t border-slate-100">
@@ -679,6 +720,59 @@ export default function AdminDashboard() {
                     </div>
                   </form>
                 )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Customer Details Modal */}
+      <AnimatePresence>
+        {showCustomerDetailsModal && selectedCustomer && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+              <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-inner">
+                    <Users className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-slate-900 tracking-tight">Customer Details</h2>
+                    <p className="text-sm font-semibold text-slate-500">View comprehensive information</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowCustomerDetailsModal(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="p-8 overflow-y-auto space-y-6 bg-white">
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Full Name</p>
+                    <p className="font-bold text-slate-900">{selectedCustomer.first_name} {selectedCustomer.last_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Email Address</p>
+                    <p className="font-bold text-slate-900">{selectedCustomer.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Contact Number</p>
+                    <p className="font-bold text-slate-900">{selectedCustomer.phone || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Builder Assigned</p>
+                    <p className="font-bold text-slate-900">{builders.find(b => b.id === selectedCustomer.builder_id)?.contact_name || 'N/A'} ({builders.find(b => b.id === selectedCustomer.builder_id)?.company_name || 'N/A'})</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Floor</p>
+                    <p className="font-bold text-slate-900">{selectedCustomer.floor || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Tower Name</p>
+                    <p className="font-bold text-slate-900">{selectedCustomer.tower_name || 'N/A'}</p>
+                  </div>
+                </div>
               </div>
             </motion.div>
           </motion.div>
