@@ -15,6 +15,11 @@ export default function ProjectView() {
   const [towerForm, setTowerForm] = useState({ towerName: '', totalFloors: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [towers, setTowers] = useState<any[]>([]);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [showAddAnnouncement, setShowAddAnnouncement] = useState(false);
+  const [announcementForm, setAnnouncementForm] = useState({ title: '', message: '' });
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<any>(null);
+  const [showAnnouncementDetailsModal, setShowAnnouncementDetailsModal] = useState(false);
 
   const fetchTowers = async (projectId: string) => {
     try {
@@ -25,6 +30,18 @@ export default function ProjectView() {
       }
     } catch (err) {
       console.error('Failed to fetch towers:', err);
+    }
+  };
+
+  const fetchAnnouncements = async (projectId: string) => {
+    try {
+      const res = await fetch(`/api/admin/announcement?projectId=${projectId}`);
+      const data = await res.json();
+      if (data.success) {
+        setAnnouncements(data.announcements || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch announcements:', err);
     }
   };
 
@@ -58,6 +75,36 @@ export default function ProjectView() {
     }
   };
 
+  const handleAnnouncementSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSubmitting || !project) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/admin/announcement', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId: project.id || project._id,
+          title: announcementForm.title,
+          message: announcementForm.message
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setShowAddAnnouncement(false);
+        setAnnouncementForm({ title: '', message: '' });
+        fetchAnnouncements(project.id || project._id);
+      } else {
+        alert(data.error || 'Failed to save announcement');
+      }
+    } catch (err) {
+      console.error('Submit error:', err);
+      alert('An error occurred. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   useEffect(() => {
     async function fetchProject() {
       try {
@@ -68,6 +115,7 @@ export default function ProjectView() {
           if (foundProject) {
             setProject(foundProject);
             fetchTowers(foundProject.id || foundProject._id);
+            fetchAnnouncements(foundProject.id || foundProject._id);
           } else {
             setProject({ project_name: 'Project Not Found', location: 'Unknown Location' });
           }
@@ -119,7 +167,7 @@ export default function ProjectView() {
           <button 
             onClick={() => {
               if (activeTab === 'announcements') {
-                // TODO: Add announcement modal logic
+                setShowAddAnnouncement(true);
               } else {
                 setShowAddTower(true);
               }
@@ -173,7 +221,27 @@ export default function ProjectView() {
             )
           )}
           {activeTab === 'announcements' && (
-            <p className="text-slate-400 text-[15px] font-medium">No announcement records found for this project.</p>
+            announcements.length === 0 ? (
+              <p className="text-slate-400 text-[15px] font-medium">No announcement records found for this project.</p>
+            ) : (
+              <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {announcements.map((ann) => (
+                  <div key={ann.id} onClick={() => { setSelectedAnnouncement(ann); setShowAnnouncementDetailsModal(true); }} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group flex flex-col justify-between cursor-pointer hover:border-indigo-300">
+                    <div>
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 text-[11px] font-bold uppercase tracking-wider rounded-xl">
+                          <Megaphone className="w-3.5 h-3.5" />
+                          {project?.project_name || 'Unknown Project'}
+                        </div>
+                        <span className="text-xs font-bold text-slate-400 mt-1">{ann.created_at ? new Date(ann.created_at).toLocaleDateString() : ann.date}</span>
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-900 mb-2">{ann.title}</h3>
+                      <p className="text-sm font-medium text-slate-600 line-clamp-3">{ann.message}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
           )}
           {activeTab !== 'progress' && activeTab !== 'announcements' && (
             <p className="text-slate-400 text-sm font-medium capitalize">{activeTab} content coming soon.</p>
@@ -224,6 +292,97 @@ export default function ProjectView() {
                     </button>
                   </div>
                 </form>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Add Announcement Modal */}
+      <AnimatePresence>
+        {showAddAnnouncement && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 sm:p-8"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 10 }} transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
+              className="bg-white w-full max-w-md rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden flex flex-col"
+            >
+              <div className="px-8 py-6 border-b border-slate-100 bg-slate-50 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-4">
+                  <div className="p-2.5 bg-indigo-100 text-indigo-600 rounded-xl">
+                    <Megaphone className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900">Add Announcement</h2>
+                    <p className="text-sm font-medium text-slate-500 mt-1">Create a new announcement</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowAddAnnouncement(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-8 overflow-y-auto">
+                <form onSubmit={handleAnnouncementSubmit} className="space-y-6">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Title</label>
+                    <input type="text" required value={announcementForm.title} onChange={(e) => setAnnouncementForm({...announcementForm, title: e.target.value})} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. Phase 1 Completion" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Message</label>
+                    <textarea required rows={4} value={announcementForm.message} onChange={(e) => setAnnouncementForm({...announcementForm, message: e.target.value})} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm resize-none" placeholder="Write the announcement message here..." />
+                  </div>
+                  <div className="pt-6 mt-4 flex justify-end border-t border-slate-100">
+                    <button type="submit" disabled={isSubmitting} className="px-8 py-3.5 bg-slate-900 text-white font-extrabold rounded-xl shadow-[0_10px_20px_rgba(0,0,0,0.1)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 transition-all duration-300 min-w-[160px] disabled:opacity-50 flex items-center justify-center">
+                      {isSubmitting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Submit'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Announcement Details Modal */}
+      <AnimatePresence>
+        {showAnnouncementDetailsModal && selectedAnnouncement && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 sm:p-8"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 10 }} transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
+              className="bg-white w-full max-w-lg rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden flex flex-col"
+            >
+              <div className="px-8 py-6 border-b border-slate-100 bg-slate-50 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-4">
+                  <div className="p-2.5 bg-indigo-100 text-indigo-600 rounded-xl">
+                    <Megaphone className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900">Announcement</h2>
+                    <p className="text-sm font-medium text-slate-500 mt-1">
+                      {selectedAnnouncement.created_at ? new Date(selectedAnnouncement.created_at).toLocaleDateString() : selectedAnnouncement.date}
+                    </p>
+                  </div>
+                </div>
+                <button onClick={() => setShowAnnouncementDetailsModal(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-8 overflow-y-auto">
+                <div className="mb-6 inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 text-[11px] font-bold uppercase tracking-wider rounded-xl">
+                  <Megaphone className="w-3.5 h-3.5" />
+                  {project?.project_name || 'Unknown Project'}
+                </div>
+                <h3 className="text-2xl font-bold text-slate-900 mb-4 leading-tight">{selectedAnnouncement.title}</h3>
+                <div className="prose prose-slate prose-sm max-w-none">
+                  <p className="text-slate-600 whitespace-pre-wrap leading-relaxed text-[15px]">{selectedAnnouncement.message}</p>
+                </div>
               </div>
             </motion.div>
           </motion.div>

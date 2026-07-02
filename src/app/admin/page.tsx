@@ -26,7 +26,10 @@ export default function AdminDashboard() {
   const [showTowerForm, setShowTowerForm] = useState(false);
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
   const [announcements, setAnnouncements] = useState<any[]>([]);
-  const [announcementData, setAnnouncementData] = useState({ title: '', message: '' });
+  const [announcementData, setAnnouncementData] = useState({ projectId: '', title: '', message: '' });
+  
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<any>(null);
+  const [showAnnouncementDetailsModal, setShowAnnouncementDetailsModal] = useState(false);
   
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [showCustomerDetailsModal, setShowCustomerDetailsModal] = useState(false);
@@ -39,7 +42,7 @@ export default function AdminDashboard() {
   });
 
   const [customerData, setCustomerData] = useState({
-    builderId: '', firstName: '', lastName: '', email: '', phone: '', floor: '', towerName: ''
+    builderId: '', firstName: '', lastName: '', email: '', phone: '', floor: '', towerName: '', flatName: '', areaSqft: ''
   });
 
   const [projectData, setProjectData] = useState({
@@ -212,7 +215,7 @@ export default function AdminDashboard() {
       if (!response.ok) throw new Error(data.error || 'Failed to add customer');
 
       setSuccess(true);
-      setCustomerData({ builderId: customerData.builderId, firstName: '', lastName: '', email: '', phone: '', floor: '', towerName: '' });
+      setCustomerData({ builderId: customerData.builderId, firstName: '', lastName: '', email: '', phone: '', floor: '', towerName: '', flatName: '', areaSqft: '' });
       fetchCustomers();
       setTimeout(() => { setSuccess(false); setShowCustomerForm(false); }, 2000);
     } catch (err: any) {
@@ -283,7 +286,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleAnnouncementChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleAnnouncementChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setAnnouncementData({ ...announcementData, [e.target.name]: e.target.value });
   };
 
@@ -297,7 +300,7 @@ export default function AdminDashboard() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          projectId: selectedProjectForSidebar?.id || selectedProjectForSidebar?._id,
+          projectId: announcementData.projectId,
           title: announcementData.title,
           message: announcementData.message
         }),
@@ -311,7 +314,7 @@ export default function AdminDashboard() {
       setTimeout(() => {
         setSuccess(false);
         setShowAnnouncementForm(false);
-        setAnnouncementData({ title: '', message: '' });
+        setAnnouncementData({ projectId: '', title: '', message: '' });
       }, 1500);
     } catch (err: any) {
       setError(err.message);
@@ -435,10 +438,7 @@ export default function AdminDashboard() {
                             <div className="bg-[#f4f7f9] z-10 relative"><Megaphone className={`w-[18px] h-[18px] transition-colors ${activeProjectSubTab === 'announcement' ? 'text-blue-600' : 'text-slate-500 group-hover:text-blue-500'}`} /></div>
                             <span className={`text-[14.5px] font-bold transition-colors ${activeProjectSubTab === 'announcement' ? 'text-blue-700' : 'text-slate-600 group-hover:text-slate-800'}`}>Announcement</span>
                           </button>
-                          <button onClick={() => setActiveProjectSubTab('flats')} className={`w-full flex items-center gap-4 px-4 py-3 relative z-10 group transition-all rounded-xl ${activeProjectSubTab === 'flats' ? 'bg-blue-50/50' : ''}`}>
-                            <div className="bg-[#f4f7f9] z-10 relative"><Building className={`w-[18px] h-[18px] transition-colors ${activeProjectSubTab === 'flats' ? 'text-blue-600' : 'text-slate-500 group-hover:text-blue-500'}`} /></div>
-                            <span className={`text-[14.5px] font-bold transition-colors ${activeProjectSubTab === 'flats' ? 'text-blue-700' : 'text-slate-600 group-hover:text-slate-800'}`}>Flats</span>
-                          </button>
+
                           <button onClick={() => setActiveProjectSubTab('staff')} className={`w-full flex items-center gap-4 px-4 py-3 relative z-10 group transition-all rounded-xl ${activeProjectSubTab === 'staff' ? 'bg-blue-50/50' : ''}`}>
                             <div className="bg-[#f4f7f9] z-10 relative"><Users className={`w-[18px] h-[18px] transition-colors ${activeProjectSubTab === 'staff' ? 'text-blue-600' : 'text-slate-500 group-hover:text-blue-500'}`} /></div>
                             <span className={`text-[14.5px] font-bold transition-colors ${activeProjectSubTab === 'staff' ? 'text-blue-700' : 'text-slate-600 group-hover:text-slate-800'}`}>Staff</span>
@@ -478,6 +478,7 @@ export default function AdminDashboard() {
                     <button 
                       onClick={() => {
                         if (activeProjectSubTab === 'announcement') {
+                          setAnnouncementData(prev => ({ ...prev, projectId: selectedProjectForSidebar?.id || selectedProjectForSidebar?._id || '' }));
                           setShowAnnouncementForm(true);
                         } else {
                           setShowTowerForm(true)
@@ -511,13 +512,14 @@ export default function AdminDashboard() {
                   ) : activeProjectSubTab === 'announcement' && announcements.length > 0 ? (
                     <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                       {announcements.map((ann) => (
-                        <div key={ann.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow group flex flex-col justify-between">
+                        <div key={ann.id} onClick={() => { setSelectedAnnouncement(ann); setShowAnnouncementDetailsModal(true); }} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group flex flex-col justify-between cursor-pointer hover:border-indigo-300">
                           <div>
                             <div className="flex justify-between items-start mb-4">
-                              <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center shrink-0">
-                                <Megaphone className="w-5 h-5" />
+                              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 text-[11px] font-bold uppercase tracking-wider rounded-xl">
+                                <Megaphone className="w-3.5 h-3.5" />
+                                {projects.find(p => p.id === ann.project_id)?.project_name || selectedProjectForSidebar?.project_name || 'Unknown Project'}
                               </div>
-                              <span className="text-xs font-bold text-slate-400">{ann.created_at ? new Date(ann.created_at).toLocaleDateString() : ann.date}</span>
+                              <span className="text-xs font-bold text-slate-400 mt-1">{ann.created_at ? new Date(ann.created_at).toLocaleDateString() : ann.date}</span>
                             </div>
                             <h3 className="text-lg font-bold text-slate-900 mb-2">{ann.title}</h3>
                             <p className="text-sm font-medium text-slate-600 line-clamp-3">{ann.message}</p>
@@ -859,6 +861,14 @@ export default function AdminDashboard() {
                         <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Tower Name</label>
                         <input type="text" name="towerName" value={customerData.towerName} onChange={handleCustomerChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. Tower A" />
                       </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Flat Name / No.</label>
+                        <input type="text" name="flatName" value={customerData.flatName} onChange={handleCustomerChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. 1402" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Area (sqft)</label>
+                        <input type="text" name="areaSqft" value={customerData.areaSqft} onChange={handleCustomerChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. 1500" />
+                      </div>
 
                     </div>
                     <div className="pt-6 mt-4 flex justify-end border-t border-slate-100">
@@ -1016,6 +1026,14 @@ export default function AdminDashboard() {
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Tower Name</p>
                     <p className="font-bold text-slate-900">{selectedCustomer.tower_name || 'N/A'}</p>
                   </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Flat Name / No.</p>
+                    <p className="font-bold text-slate-900">{selectedCustomer.flat_name || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Area (sqft)</p>
+                    <p className="font-bold text-slate-900">{selectedCustomer.area_sqft ? `${selectedCustomer.area_sqft} sqft` : 'N/A'}</p>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -1096,6 +1114,23 @@ export default function AdminDashboard() {
                 {!success && (
                   <form onSubmit={handleAnnouncementSubmit} className="space-y-6">
                     <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Project Name</label>
+                      <div className="relative">
+                        <select 
+                          name="projectId" required value={announcementData.projectId} onChange={handleAnnouncementChange}
+                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
+                        >
+                          <option value="" className="text-slate-400">-- Select a Project --</option>
+                          {projects.map(p => (
+                            <option key={p.id} value={p.id} className="text-slate-900">{p.project_name}</option>
+                          ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                          <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
+                        </div>
+                      </div>
+                    </div>
+                    <div>
                       <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Title</label>
                       <input type="text" name="title" required value={announcementData.title} onChange={handleAnnouncementChange} placeholder="e.g. Phase 1 Completion" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
                     </div>
@@ -1110,6 +1145,49 @@ export default function AdminDashboard() {
                     </div>
                   </form>
                 )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Announcement Details Modal */}
+      <AnimatePresence>
+        {showAnnouncementDetailsModal && selectedAnnouncement && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 sm:p-8"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 10 }} transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
+              className="bg-white w-full max-w-lg rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden flex flex-col"
+            >
+              <div className="px-8 py-6 border-b border-slate-100 bg-slate-50 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-4">
+                  <div className="p-2.5 bg-indigo-100 text-indigo-600 rounded-xl">
+                    <Megaphone className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900">Announcement</h2>
+                    <p className="text-sm font-medium text-slate-500 mt-1">
+                      {selectedAnnouncement.created_at ? new Date(selectedAnnouncement.created_at).toLocaleDateString() : selectedAnnouncement.date}
+                    </p>
+                  </div>
+                </div>
+                <button onClick={() => setShowAnnouncementDetailsModal(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-8 overflow-y-auto">
+                <div className="mb-6 inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 text-[11px] font-bold uppercase tracking-wider rounded-xl">
+                  <Megaphone className="w-3.5 h-3.5" />
+                  {projects.find(p => p.id === selectedAnnouncement.project_id)?.project_name || selectedProjectForSidebar?.project_name || 'Unknown Project'}
+                </div>
+                <h3 className="text-2xl font-bold text-slate-900 mb-4 leading-tight">{selectedAnnouncement.title}</h3>
+                <div className="prose prose-slate prose-sm max-w-none">
+                  <p className="text-slate-600 whitespace-pre-wrap leading-relaxed text-[15px]">{selectedAnnouncement.message}</p>
+                </div>
               </div>
             </motion.div>
           </motion.div>

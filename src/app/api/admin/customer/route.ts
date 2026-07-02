@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { builderId, firstName, lastName, email, phone, floor, towerName } = body;
+    const { builderId, firstName, lastName, email, phone, floor, towerName, flatName, areaSqft } = body;
 
     if (!builderId || !firstName || !lastName || !email) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -26,6 +26,8 @@ export async function POST(request: Request) {
           phone: phone || null,
           floor: floor || null,
           tower_name: towerName || null,
+          flat_name: flatName || null,
+          area_sqft: areaSqft || null,
         }
       ])
       .select();
@@ -56,7 +58,7 @@ export async function GET(request: Request) {
 
     const { data, error } = await supabaseAdmin
       .from('customer')
-      .select('id, first_name, last_name, email, phone, floor, tower_name, project_id, builder_id, created_at')
+      .select('id, first_name, last_name, email, phone, floor, tower_name, flat_name, area_sqft, project_id, builder_id, created_at')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
