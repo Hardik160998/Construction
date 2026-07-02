@@ -26,7 +26,11 @@ export default function AdminLogin() {
     if (isYash || isHardik) {
       try {
         await loginAction(email);
-        router.push('/superadmin');
+        if (isHardik) {
+          router.push('/superadmin');
+        } else {
+          router.push('/project');
+        }
       } catch (err) {
         setError('An error occurred during sign in.');
         setIsLoading(false);

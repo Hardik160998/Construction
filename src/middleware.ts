@@ -2,16 +2,21 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
+  const auth = request.cookies.get('admin_auth')?.value
+
   if (request.nextUrl.pathname.startsWith('/superadmin')) {
-    const auth = request.cookies.get('admin_auth')?.value
-    
-    // Only allow these two emails to access the superadmin pages
-    if (auth !== 'bhaliyayash595@gmail.com' && auth !== 'hardikkotadiya90@gmail.com') {
+    if (auth !== 'hardikkotadiya90@gmail.com') {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+  }
+
+  if (request.nextUrl.pathname.startsWith('/project')) {
+    if (auth !== 'bhaliyayash595@gmail.com') {
       return NextResponse.redirect(new URL('/login', request.url))
     }
   }
 }
 
 export const config = {
-  matcher: '/superadmin/:path*',
+  matcher: ['/superadmin/:path*', '/project/:path*'],
 }
