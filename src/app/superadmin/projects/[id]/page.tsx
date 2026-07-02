@@ -148,7 +148,7 @@ export default function ProjectView() {
         
         {/* Back Button */}
         <div>
-          <Link href="/admin" className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors">
+          <Link href="/superadmin" className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Link>

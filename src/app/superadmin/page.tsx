@@ -26,6 +26,7 @@ export default function AdminDashboard() {
   const [showTowerForm, setShowTowerForm] = useState(false);
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
   const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [staffList, setStaffList] = useState<any[]>([]);
   const [announcementData, setAnnouncementData] = useState({ projectId: '', title: '', message: '' });
   
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<any>(null);
@@ -57,9 +58,11 @@ export default function AdminDashboard() {
     if (selectedProjectForSidebar) {
       fetchTowers(selectedProjectForSidebar.id || selectedProjectForSidebar._id);
       fetchAnnouncements(selectedProjectForSidebar.id || selectedProjectForSidebar._id);
+      fetchStaff(selectedProjectForSidebar.id || selectedProjectForSidebar._id);
     } else {
       setTowers([]);
       setAnnouncements([]);
+      setStaffList([]);
     }
   }, [selectedProjectForSidebar]);
 
@@ -130,6 +133,16 @@ export default function AdminDashboard() {
       if (data.success) setAnnouncements(data.announcements || []);
     } catch (err) {
       console.error('Failed to load announcements', err);
+    }
+  };
+
+  const fetchStaff = async (projectId: string) => {
+    try {
+      const res = await fetch(`/api/admin/staff?projectId=${projectId}`);
+      const data = await res.json();
+      if (data.success) setStaffList(data.staff || []);
+    } catch (err) {
+      console.error('Failed to load staff', err);
     }
   };
 
@@ -360,7 +373,7 @@ export default function AdminDashboard() {
           </div>
           <div>
             <span className="font-extrabold text-2xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600">
-              BuilderFlow
+              SuperAdmin
             </span>
             <div className="text-[10px] uppercase tracking-[0.2em] text-blue-600 font-bold mt-0.5">Admin Workspace</div>
           </div>
@@ -469,25 +482,13 @@ export default function AdminDashboard() {
                           {activeProjectSubTab === 'announcement' ? 'Announcements' : selectedProjectForSidebar.project_name}
                         </h2>
                         <p className="text-sm font-medium text-slate-500 mt-1">
-                          {activeProjectSubTab === 'announcement' ? 'Manage announcements for this project' : (
+                          {activeProjectSubTab === 'announcement' ? 'View announcements for this project' : (
                             <>Location: <span className="font-semibold text-slate-700">{selectedProjectForSidebar.location || 'N/A'}</span></>
                           )}
                         </p>
                       </div>
                     </div>
-                    <button 
-                      onClick={() => {
-                        if (activeProjectSubTab === 'announcement') {
-                          setAnnouncementData(prev => ({ ...prev, projectId: selectedProjectForSidebar?.id || selectedProjectForSidebar?._id || '' }));
-                          setShowAnnouncementForm(true);
-                        } else {
-                          setShowTowerForm(true)
-                        }
-                      }} 
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-bold rounded-xl transition-all shadow-[0_4px_15px_rgba(59,130,246,0.3)] hover:shadow-[0_6px_20px_rgba(59,130,246,0.4)]"
-                    >
-                      <Plus className="w-4 h-4" /> {activeProjectSubTab === 'announcement' ? 'Add Announcement' : 'Add Tower'}
-                    </button>
+
                   </div>
 
                   {activeProjectSubTab === 'progress' && towers.length > 0 ? (
@@ -503,7 +504,7 @@ export default function AdminDashboard() {
                               <p className="text-sm font-semibold text-slate-500">{tower.total_floors} Floors</p>
                             </div>
                           </div>
-                          <Link href={`/admin/tower/${encodeURIComponent(tower.tower_name)}?id=${tower.id}`} className="mt-6 w-full block text-center py-2.5 bg-slate-50 text-slate-700 font-bold rounded-xl hover:bg-slate-100 transition-colors text-sm">
+                          <Link href={`/superadmin/tower/${encodeURIComponent(tower.tower_name)}?id=${tower.id}`} className="mt-6 w-full block text-center py-2.5 bg-slate-50 text-slate-700 font-bold rounded-xl hover:bg-slate-100 transition-colors text-sm">
                             Manage Progress
                           </Link>
                         </div>
@@ -527,11 +528,34 @@ export default function AdminDashboard() {
                         </div>
                       ))}
                     </div>
+                  ) : activeProjectSubTab === 'staff' && staffList.length > 0 ? (
+                    <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {staffList.map((staff) => (
+                        <div key={staff.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group flex flex-col justify-between cursor-default">
+                          <div>
+                            <div className="flex justify-between items-start mb-4">
+                              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 text-[11px] font-bold uppercase tracking-wider rounded-xl">
+                                <Briefcase className="w-3.5 h-3.5" />
+                                {staff.role}
+                              </div>
+                              <span className="text-xs font-bold text-slate-400 mt-1">{staff.created_at ? new Date(staff.created_at).toLocaleDateString() : 'N/A'}</span>
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900 mb-2">{staff.name}</h3>
+                            <div className="space-y-1.5 mt-4">
+                              {staff.phone && <p className="text-sm font-medium text-slate-600 flex items-center gap-2">📞 {staff.phone}</p>}
+                              {staff.email && <p className="text-sm font-medium text-slate-600 flex items-center gap-2">✉️ {staff.email}</p>}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   ) : (
                     <div className="mt-8 flex items-center justify-center min-h-[400px]">
                       <p className="text-center text-slate-400/80 font-medium text-lg tracking-wide">
                         {activeProjectSubTab === 'announcement' 
                           ? 'No announcement records found for this project.'
+                          : activeProjectSubTab === 'staff'
+                          ? 'No staff members assigned to this project yet.'
                           : `No ${activeProjectSubTab} records found for this project.`}
                       </p>
                     </div>
@@ -549,9 +573,9 @@ export default function AdminDashboard() {
                   {activeTab === 'builder' ? 'Builder Matrix' : activeTab === 'customer' ? 'Customer Network' : 'Project Registry'}
                   <div className="h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]" />
                 </h1>
-                <p className="text-slate-500 text-lg">
-                  {activeTab === 'builder' 
-                    ? 'Deploy new construction companies to the BuilderFlow ecosystem.' 
+                <p className="text-sm font-medium text-slate-500 mt-2">
+                    {activeTab === 'builder' 
+                    ? 'Deploy new construction companies to the SuperAdmin ecosystem.' 
                     : activeTab === 'customer' 
                       ? 'Integrate new buyers and assign them directly to active builders.'
                       : 'Initialize new real estate projects for the global tracker.'}
@@ -581,16 +605,8 @@ export default function AdminDashboard() {
                        <Plus className="w-4 h-4" /> Add Builder
                      </button>
                    )}
-                   {activeTab === 'customer' && (
-                     <button onClick={() => setShowCustomerForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2">
-                       <Plus className="w-4 h-4" /> Add Customer
-                     </button>
-                   )}
-                   {activeTab === 'project' && (
-                     <button onClick={() => setShowProjectForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2">
-                       <Plus className="w-4 h-4" /> Add Project
-                     </button>
-                   )}
+
+
                 </div>
 
                 <div className="p-8 sm:p-12 relative z-10">
@@ -638,7 +654,7 @@ export default function AdminDashboard() {
                             <th className="pb-4 px-4">Name</th>
                             <th className="pb-4 px-4">Email</th>
                             <th className="pb-4 px-4">Contact No</th>
-                            <th className="pb-4 px-4">Builder Name</th>
+                            <th className="pb-4 px-4">Builder Company</th>
                             <th className="pb-4 px-4 text-right">Actions</th>
                           </tr>
                         </thead>
@@ -646,7 +662,7 @@ export default function AdminDashboard() {
                           {customers.length === 0 ? (
                             <tr>
                               <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
-                                No customers added yet. Click 'Add Customer' to initialize one.
+                                No customers found in the network yet.
                               </td>
                             </tr>
                           ) : (
@@ -656,7 +672,7 @@ export default function AdminDashboard() {
                                 <td className="py-5 px-4 text-slate-600 font-medium">{customer.email}</td>
                                 <td className="py-5 px-4 text-slate-600 font-medium">{customer.phone || 'N/A'}</td>
                                 <td className="py-5 px-4 text-slate-600 font-medium">
-                                  {builders.find(b => b.id === customer.builder_id)?.contact_name || 'N/A'}
+                                  {builders.find(b => b.id === customer.builder_id)?.company_name || 'N/A'}
                                 </td>
                                 <td className="py-5 px-4 text-right">
                                   <button 
@@ -690,7 +706,7 @@ export default function AdminDashboard() {
                           {projects.length === 0 ? (
                             <tr>
                               <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
-                                No projects registered yet. Click 'Add Project' to initialize one.
+                                No projects registered in the network yet.
                               </td>
                             </tr>
                           ) : (

@@ -111,7 +111,7 @@ export default function TowerProgressPage({ params }: { params: Promise<{ towerN
         {/* Header */}
         <div className="mb-10 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <Link href="/admin?tab=project" className="p-3 bg-white border border-slate-200 rounded-2xl text-slate-500 hover:text-slate-800 hover:border-slate-300 shadow-sm transition-all group">
+            <Link href="/superadmin?tab=project" className="p-3 bg-white border border-slate-200 rounded-2xl text-slate-500 hover:text-slate-800 hover:border-slate-300 shadow-sm transition-all group">
               <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
             </Link>
             <div>
@@ -161,44 +161,25 @@ export default function TowerProgressPage({ params }: { params: Promise<{ towerN
 
               <div className="mt-auto pt-4">
                 <div className="flex items-center justify-between bg-slate-50 border border-slate-100 rounded-xl p-2 mb-2">
-                  <span className="text-sm font-bold text-slate-500 px-2">Completed?</span>
-                  <div className="flex bg-slate-200/50 p-1 rounded-lg">
-                    <button onClick={() => togglePhase(phase.id, true)} className={`px-5 py-1.5 text-xs font-bold rounded-md transition-all ${phase.progress === 100 ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-                      Yes
-                    </button>
-                    <button onClick={() => togglePhase(phase.id, false)} className={`px-5 py-1.5 text-xs font-bold rounded-md transition-all ${phase.progress === 0 ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-                      No
-                    </button>
+                  <span className="text-sm font-bold text-slate-500 px-2">Status</span>
+                  <div className="flex px-3 py-1.5 rounded-lg bg-white shadow-sm border border-slate-200">
+                    <span className={`text-xs font-bold ${phase.progress === 100 ? 'text-blue-600' : 'text-slate-600'}`}>
+                      {phase.progress === 100 ? 'Completed' : 'Pending'}
+                    </span>
                   </div>
                 </div>
 
-                {/* Upload Image Section if Completed */}
+                {/* Proof Image Section if Completed */}
                 {phase.progress === 100 && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-3">
                     {phase.imageUrl ? (
                       <div className="relative w-full h-32 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
                         <img src={phase.imageUrl} alt="Phase Proof" className="w-full h-full object-cover" />
-                        <label className="absolute bottom-2 right-2 cursor-pointer bg-white/90 backdrop-blur-sm text-slate-900 px-3 py-1.5 rounded-lg font-bold text-xs shadow-lg hover:scale-105 transition-transform flex items-center gap-1.5">
-                          {uploadingPhaseId === phase.id ? <div className="w-3 h-3 border-2 border-slate-900/30 border-t-slate-900 rounded-full animate-spin" /> : <UploadCloud className="w-3 h-3" />}
-                          Change
-                          <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, phase.id)} disabled={uploadingPhaseId === phase.id} />
-                        </label>
                       </div>
                     ) : (
-                      <label className={`w-full h-12 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer transition-all ${uploadingPhaseId === phase.id ? 'border-slate-300 bg-slate-50' : 'border-blue-200 hover:border-blue-500 bg-blue-50/50 hover:bg-blue-100/50'}`}>
-                        {uploadingPhaseId === phase.id ? (
-                           <div className="flex items-center gap-2 text-slate-500">
-                             <div className="w-4 h-4 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin" />
-                             <span className="text-xs font-bold">Uploading...</span>
-                           </div>
-                        ) : (
-                          <div className="flex items-center gap-2 text-blue-600">
-                            <ImageIcon className="w-4 h-4" />
-                            <span className="text-xs font-bold">Upload Proof to Customer</span>
-                          </div>
-                        )}
-                        <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, phase.id)} disabled={uploadingPhaseId === phase.id} />
-                      </label>
+                      <div className="w-full h-12 border-2 border-dashed rounded-xl flex items-center justify-center border-slate-200 bg-slate-50">
+                        <span className="text-xs font-bold text-slate-400">No Proof Uploaded</span>
+                      </div>
                     )}
                   </motion.div>
                 )}

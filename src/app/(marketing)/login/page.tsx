@@ -5,6 +5,7 @@ import { Building2, ArrowRight, LockKeyhole, AlertCircle, Eye, EyeOff } from 'lu
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import { loginAction } from '@/actions/auth';
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('');
@@ -14,22 +15,29 @@ export default function AdminLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    // Simulate network delay for premium feel
-    setTimeout(() => {
-      if (email === 'bhaliyayash595@gmail.com' && password === 'YASH@1966') {
-        // Successful login
-        router.push('/admin');
-      } else {
-        // Failed login
-        setError('Invalid credentials. Access denied.');
+    const isYash = email === 'bhaliyayash595@gmail.com' && password === 'YASH@1966';
+    const isHardik = email === 'hardikkotadiya90@gmail.com' && password === 'hardikkotadiya90';
+
+    if (isYash || isHardik) {
+      try {
+        await loginAction(email);
+        router.push('/superadmin');
+      } catch (err) {
+        setError('An error occurred during sign in.');
         setIsLoading(false);
       }
-    }, 800);
+    } else {
+      // Simulate network delay for premium feel on failed attempt
+      setTimeout(() => {
+        setError('Invalid credentials. Access denied.');
+        setIsLoading(false);
+      }, 800);
+    }
   };
 
   return (
