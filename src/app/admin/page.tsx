@@ -24,6 +24,9 @@ export default function AdminDashboard() {
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [showTowerForm, setShowTowerForm] = useState(false);
+  const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [announcementData, setAnnouncementData] = useState({ title: '', message: '' });
   
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [showCustomerDetailsModal, setShowCustomerDetailsModal] = useState(false);
@@ -50,8 +53,10 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (selectedProjectForSidebar) {
       fetchTowers(selectedProjectForSidebar.id || selectedProjectForSidebar._id);
+      fetchAnnouncements(selectedProjectForSidebar.id || selectedProjectForSidebar._id);
     } else {
       setTowers([]);
+      setAnnouncements([]);
     }
   }, [selectedProjectForSidebar]);
 
@@ -112,6 +117,16 @@ export default function AdminDashboard() {
       if (data.success) setTowers(data.towers || []);
     } catch (err) {
       console.error('Failed to load towers', err);
+    }
+  };
+
+  const fetchAnnouncements = async (projectId: string) => {
+    try {
+      const res = await fetch(`/api/admin/announcement?projectId=${projectId}`);
+      const data = await res.json();
+      if (data.success) setAnnouncements(data.announcements || []);
+    } catch (err) {
+      console.error('Failed to load announcements', err);
     }
   };
 
@@ -268,6 +283,43 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleAnnouncementChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setAnnouncementData({ ...announcementData, [e.target.name]: e.target.value });
+  };
+
+  const handleAnnouncementSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError(''); setSuccess(false);
+
+    try {
+      const response = await fetch('/api/admin/announcement', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId: selectedProjectForSidebar?.id || selectedProjectForSidebar?._id,
+          title: announcementData.title,
+          message: announcementData.message
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to add announcement');
+
+      setSuccess(true);
+      fetchAnnouncements(selectedProjectForSidebar?.id || selectedProjectForSidebar?._id);
+      
+      setTimeout(() => {
+        setSuccess(false);
+        setShowAnnouncementForm(false);
+        setAnnouncementData({ title: '', message: '' });
+      }, 1500);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const menuItems = [
     { id: 'builder', label: 'Builder Matrix', icon: HardHat },
     { id: 'customer', label: 'Customer Network', icon: Users },
@@ -414,15 +466,26 @@ export default function AdminDashboard() {
                       </button>
                       <div>
                         <h2 className="text-2xl font-extrabold text-slate-900 capitalize flex items-center gap-2">
-                          {selectedProjectForSidebar.project_name}
+                          {activeProjectSubTab === 'announcement' ? 'Announcements' : selectedProjectForSidebar.project_name}
                         </h2>
                         <p className="text-sm font-medium text-slate-500 mt-1">
-                          Location: <span className="font-semibold text-slate-700">{selectedProjectForSidebar.location || 'N/A'}</span>
+                          {activeProjectSubTab === 'announcement' ? 'Manage announcements for this project' : (
+                            <>Location: <span className="font-semibold text-slate-700">{selectedProjectForSidebar.location || 'N/A'}</span></>
+                          )}
                         </p>
                       </div>
                     </div>
-                    <button onClick={() => setShowTowerForm(true)} className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-bold rounded-xl transition-all shadow-[0_4px_15px_rgba(59,130,246,0.3)] hover:shadow-[0_6px_20px_rgba(59,130,246,0.4)]">
-                      <Plus className="w-4 h-4" /> Add Tower
+                    <button 
+                      onClick={() => {
+                        if (activeProjectSubTab === 'announcement') {
+                          setShowAnnouncementForm(true);
+                        } else {
+                          setShowTowerForm(true)
+                        }
+                      }} 
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-bold rounded-xl transition-all shadow-[0_4px_15px_rgba(59,130,246,0.3)] hover:shadow-[0_6px_20px_rgba(59,130,246,0.4)]"
+                    >
+                      <Plus className="w-4 h-4" /> {activeProjectSubTab === 'announcement' ? 'Add Announcement' : 'Add Tower'}
                     </button>
                   </div>
 
@@ -445,10 +508,29 @@ export default function AdminDashboard() {
                         </div>
                       ))}
                     </div>
+                  ) : activeProjectSubTab === 'announcement' && announcements.length > 0 ? (
+                    <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {announcements.map((ann) => (
+                        <div key={ann.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow group flex flex-col justify-between">
+                          <div>
+                            <div className="flex justify-between items-start mb-4">
+                              <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center shrink-0">
+                                <Megaphone className="w-5 h-5" />
+                              </div>
+                              <span className="text-xs font-bold text-slate-400">{ann.created_at ? new Date(ann.created_at).toLocaleDateString() : ann.date}</span>
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900 mb-2">{ann.title}</h3>
+                            <p className="text-sm font-medium text-slate-600 line-clamp-3">{ann.message}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   ) : (
                     <div className="mt-8 flex items-center justify-center min-h-[400px]">
                       <p className="text-center text-slate-400/80 font-medium text-lg tracking-wide">
-                        No {activeProjectSubTab} records found for this project.
+                        {activeProjectSubTab === 'announcement' 
+                          ? 'No announcement records found for this project.'
+                          : `No ${activeProjectSubTab} records found for this project.`}
                       </p>
                     </div>
                   )}
@@ -978,6 +1060,52 @@ export default function AdminDashboard() {
                     <div className="pt-6 mt-4 flex justify-end border-t border-slate-100">
                       <button type="submit" disabled={isSubmitting} className="group relative px-8 py-3.5 bg-slate-900 text-white font-extrabold rounded-xl shadow-[0_10px_20px_rgba(0,0,0,0.1)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 min-w-[160px] flex justify-center items-center">
                         {isSubmitting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Save Tower'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Add Announcement Modal */}
+      <AnimatePresence>
+        {showAnnouncementForm && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+              <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center shadow-inner">
+                    <Megaphone className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-slate-900 tracking-tight">Add Announcement</h2>
+                    <p className="text-sm font-semibold text-slate-500">Create a new project announcement</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowAnnouncementForm(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="p-8 overflow-y-auto bg-white">
+                {success && <div className="mb-6 p-4 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl font-semibold text-sm flex items-center gap-3"><CheckCircle2 className="w-5 h-5 shrink-0" />Announcement posted successfully!</div>}
+                
+                {!success && (
+                  <form onSubmit={handleAnnouncementSubmit} className="space-y-6">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Title</label>
+                      <input type="text" name="title" required value={announcementData.title} onChange={handleAnnouncementChange} placeholder="e.g. Phase 1 Completion" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Message</label>
+                      <textarea name="message" required value={announcementData.message} onChange={handleAnnouncementChange} placeholder="Write the announcement message here..." rows={4} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm resize-none" />
+                    </div>
+                    <div className="pt-6 mt-4 flex justify-end border-t border-slate-100">
+                      <button type="submit" disabled={isSubmitting} className="group relative px-8 py-3.5 bg-slate-900 text-white font-extrabold rounded-xl shadow-[0_10px_20px_rgba(0,0,0,0.1)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 min-w-[160px] flex justify-center items-center">
+                        {isSubmitting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Submit Announcement'}
                       </button>
                     </div>
                   </form>
