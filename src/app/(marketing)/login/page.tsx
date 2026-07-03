@@ -29,7 +29,7 @@ export default function AdminLogin() {
         if (isHardik) {
           router.push('/superadmin');
         } else {
-          router.push('/project');
+          router.push('/project-registry');
         }
       } catch (err) {
         setError('An error occurred during sign in.');

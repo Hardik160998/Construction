@@ -111,7 +111,7 @@ export default function TowerProgressPage({ params }: { params: Promise<{ towerN
         {/* Header */}
         <div className="mb-10 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <Link href="/project?tab=project" className="p-3 bg-white border border-slate-200 rounded-2xl text-slate-500 hover:text-slate-800 hover:border-slate-300 shadow-sm transition-all group">
+            <Link href="/project-registry" className="p-3 bg-white border border-slate-200 rounded-2xl text-slate-500 hover:text-slate-800 hover:border-slate-300 shadow-sm transition-all group">
               <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
             </Link>
             <div>

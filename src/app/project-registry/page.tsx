@@ -74,10 +74,16 @@ export default function BuilderDashboard() {
     fetchProjects();
 
     const handlePopState = () => {
+      const pathname = window.location.pathname;
       const params = new URLSearchParams(window.location.search);
       const tab = params.get('tab');
-      if (tab === 'builder' || tab === 'customer' || tab === 'project') {
-        setActiveTab(tab);
+      
+      if (pathname.includes('/customer-network') || tab === 'customer') {
+        setActiveTab('customer');
+      } else if (pathname.includes('/builder-network') || tab === 'builder') {
+        setActiveTab('builder');
+      } else {
+        setActiveTab('project');
       }
     };
 
@@ -353,7 +359,10 @@ export default function BuilderDashboard() {
     setActiveProjectSubTab(null);
     
     // Sync with URL
-    window.history.pushState(null, '', `?tab=${tabId}`);
+    const newPath = tabId === 'customer' ? '/project-registry/customer-network' 
+                  : tabId === 'builder' ? '/project-registry/builder-network' 
+                  : '/project-registry';
+    window.history.pushState(null, '', newPath);
   };
 
   return (
@@ -499,6 +508,11 @@ export default function BuilderDashboard() {
                     {activeProjectSubTab === 'progress' && !selectedTowerForProgress && (
                       <button onClick={() => setShowTowerForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2 shrink-0">
                         <Plus className="w-4 h-4" /> Add Tower
+                      </button>
+                    )}
+                    {activeProjectSubTab === 'announcement' && (
+                      <button onClick={() => setShowAnnouncementForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2 shrink-0">
+                        <Plus className="w-4 h-4" /> Add Announcement
                       </button>
                     )}
                   </div>

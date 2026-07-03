@@ -72,10 +72,16 @@ export default function AdminDashboard() {
     fetchProjects();
 
     const handlePopState = () => {
+      const pathname = window.location.pathname;
       const params = new URLSearchParams(window.location.search);
       const tab = params.get('tab');
-      if (tab === 'builder' || tab === 'customer' || tab === 'project') {
-        setActiveTab(tab);
+      
+      if (pathname.includes('/customer-network') || tab === 'customer') {
+        setActiveTab('customer');
+      } else if (pathname.includes('/project-registry') || tab === 'project') {
+        setActiveTab('project');
+      } else {
+        setActiveTab('builder');
       }
     };
 
@@ -352,7 +358,10 @@ export default function AdminDashboard() {
     setActiveProjectSubTab(null);
     
     // Sync with URL
-    window.history.pushState(null, '', `?tab=${tabId}`);
+    const newPath = tabId === 'customer' ? '/superadmin/customer-network' 
+                  : tabId === 'project' ? '/superadmin/project-registry' 
+                  : '/superadmin/builder-matrix';
+    window.history.pushState(null, '', newPath);
   };
 
   return (

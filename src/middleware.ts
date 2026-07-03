@@ -10,7 +10,7 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  if (request.nextUrl.pathname.startsWith('/project')) {
+  if (request.nextUrl.pathname.startsWith('/project-registry')) {
     if (auth !== 'bhaliyayash595@gmail.com') {
       return NextResponse.redirect(new URL('/login', request.url))
     }
@@ -18,5 +18,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/superadmin/:path*', '/project/:path*'],
+  matcher: ['/superadmin/:path*', '/project-registry/:path*'],
 }
