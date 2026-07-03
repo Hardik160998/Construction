@@ -51,7 +51,7 @@ export default function AdminDashboard() {
   });
 
   const [towerData, setTowerData] = useState({
-    towerName: '', totalFloors: ''
+    towerName: '', totalFloors: '', totalHouses: '', numberSeries: ''
   });
 
   useEffect(() => {
@@ -284,7 +284,9 @@ export default function AdminDashboard() {
         body: JSON.stringify({
           projectId: selectedProjectForSidebar?.id || selectedProjectForSidebar?._id,
           towerName: towerData.towerName,
-          totalFloors: towerData.totalFloors
+          totalFloors: towerData.totalFloors,
+          totalHouses: towerData.totalHouses,
+          numberSeries: towerData.numberSeries
         }),
       });
       const data = await response.json();
@@ -296,7 +298,7 @@ export default function AdminDashboard() {
       setTimeout(() => {
         setSuccess(false);
         setShowTowerForm(false);
-        setTowerData({ towerName: '', totalFloors: '' });
+        setTowerData({ towerName: '', totalFloors: '', totalHouses: '', numberSeries: '' });
       }, 1500);
     } catch (err: any) {
       setError(err.message);
@@ -609,6 +611,11 @@ export default function AdminDashboard() {
                    </div>
                    
                    {/* Add Button Toggles Modal */}
+                   {activeTab === 'project' && activeProjectSubTab === 'progress' && selectedProjectForSidebar && (
+                      <button onClick={() => setShowTowerForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2 shrink-0">
+                        <Plus className="w-4 h-4" /> {selectedProjectForSidebar?.project_type === 'Society' ? 'Add Section' : 'Add Tower'}
+                      </button>
+                    )}
                    {activeTab === 'builder' && (
                      <button onClick={() => setShowBuilderForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2">
                        <Plus className="w-4 h-4" /> Add Builder
@@ -1079,8 +1086,8 @@ export default function AdminDashboard() {
                     <Building className="w-6 h-6" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-black text-slate-900 tracking-tight">Add Tower</h2>
-                    <p className="text-sm font-semibold text-slate-500">Configure tower details</p>
+                    <h2 className="text-xl font-black text-slate-900 tracking-tight">{selectedProjectForSidebar?.project_type === 'Society' ? 'Add Section' : 'Add Tower'}</h2>
+                    <p className="text-sm font-semibold text-slate-500">Configure {selectedProjectForSidebar?.project_type === 'Society' ? 'section' : 'tower'} details</p>
                   </div>
                 </div>
                 <button onClick={() => setShowTowerForm(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
@@ -1095,16 +1102,34 @@ export default function AdminDashboard() {
                 {!success && (
                   <form onSubmit={handleTowerSubmit} className="space-y-6">
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Tower Name / Number</label>
-                      <input type="text" name="towerName" required value={towerData.towerName} onChange={handleTowerChange} placeholder="e.g. Tower A" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
+                      <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">{selectedProjectForSidebar?.project_type === 'Society' ? 'Section' : 'Tower'} Name / Number</label>
+                      <input type="text" name="towerName" required value={towerData.towerName} onChange={handleTowerChange} placeholder={selectedProjectForSidebar?.project_type === 'Society' ? "e.g. Section A" : "e.g. Tower A"} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
                     </div>
+                    {selectedProjectForSidebar?.project_type === 'Society' ? (
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Total House</label>
+                        <input type="number" name="totalHouses" required min="1" value={towerData.totalHouses} onChange={handleTowerChange} placeholder="e.g. 50" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
+                      </div>
+                    ) : (
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Total Floors</label>
+                        <input type="number" name="totalFloors" required min="1" value={towerData.totalFloors} onChange={handleTowerChange} placeholder="e.g. 15" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
+                      </div>
+                    )}
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Total Floors</label>
-                      <input type="number" name="totalFloors" required min="1" value={towerData.totalFloors} onChange={handleTowerChange} placeholder="e.g. 15" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
+                      <label className="block text-xs font-bold text-slate-500 mb-3 uppercase tracking-widest">Number Series</label>
+                      <div className="flex flex-wrap gap-4">
+                        {['1-10', '101-110', '1001-1010'].map((series) => (
+                          <label key={series} className={`flex items-center gap-2 px-4 py-3 border rounded-xl cursor-pointer transition-all ${towerData.numberSeries === series ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}`}>
+                            <input type="radio" name="numberSeries" value={series} checked={towerData.numberSeries === series} onChange={handleTowerChange} className="w-4 h-4 text-blue-600 focus:ring-blue-500" required />
+                            <span className="font-semibold">{series}</span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
                     <div className="pt-6 mt-4 flex justify-end border-t border-slate-100">
                       <button type="submit" disabled={isSubmitting} className="group relative px-8 py-3.5 bg-slate-900 text-white font-extrabold rounded-xl shadow-[0_10px_20px_rgba(0,0,0,0.1)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 min-w-[160px] flex justify-center items-center">
-                        {isSubmitting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Save Tower'}
+                        <span className="relative z-10">{isSubmitting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : (selectedProjectForSidebar?.project_type === 'Society' ? 'Save Section' : 'Save Tower')}</span>
                       </button>
                     </div>
                   </form>

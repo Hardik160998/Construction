@@ -67,22 +67,40 @@ export default function TowerProgress({ towerId, towerName, onBack }: TowerProgr
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, phaseId: string) => {
     if (!e.target.files || e.target.files.length === 0) return;
     
-    const file = e.target.files[0];
     setUploadingPhaseId(phaseId);
 
-    const formData = new FormData();
-    formData.append('file', file);
-
     try {
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await response.json();
+      const uploadedUrls = [];
+      const phase = phases.find(p => p.id === phaseId);
+      let existingUrls: string[] = [];
+      if (phase?.imageUrl) {
+        try {
+          const parsed = JSON.parse(phase.imageUrl);
+          existingUrls = Array.isArray(parsed) ? parsed : [phase.imageUrl];
+        } catch {
+          existingUrls = [phase.imageUrl];
+        }
+      }
+
+      for (let i = 0; i < e.target.files.length; i++) {
+        const file = e.target.files[i];
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await response.json();
+        
+        if (!response.ok) throw new Error(data.error || 'Failed to upload image');
+        uploadedUrls.push(data.url);
+      }
       
-      if (!response.ok) throw new Error(data.error || 'Failed to upload image');
+      const allUrls = [...existingUrls, ...uploadedUrls];
+      const newImageUrlString = JSON.stringify(allUrls);
       
-      setPhases(prev => prev.map(p => p.id === phaseId ? { ...p, imageUrl: data.url } : p));
+      setPhases(prev => prev.map(p => p.id === phaseId ? { ...p, imageUrl: newImageUrlString } : p));
       
       if (towerId) {
         await fetch('/api/admin/tower', {
@@ -90,13 +108,13 @@ export default function TowerProgress({ towerId, towerName, onBack }: TowerProgr
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             id: towerId,
-            updates: { [`${phaseId}_image`]: data.url }
+            updates: { [`${phaseId}_image`]: newImageUrlString }
           })
         });
       }
     } catch (err: any) {
       console.error(err.message);
-      alert('Failed to upload image');
+      alert('Failed to upload image(s)');
     } finally {
       setUploadingPhaseId(null);
     }
@@ -173,8 +191,26 @@ export default function TowerProgress({ towerId, towerName, onBack }: TowerProgr
                 {phase.progress === 100 && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-3">
                     {phase.imageUrl ? (
-                      <div className="relative w-full h-32 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-                        <img src={phase.imageUrl} alt="Phase Proof" className="w-full h-full object-cover" />
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {(() => {
+                          let urls: string[] = [];
+                          try {
+                            const parsed = JSON.parse(phase.imageUrl);
+                            urls = Array.isArray(parsed) ? parsed : [phase.imageUrl];
+                          } catch {
+                            urls = [phase.imageUrl];
+                          }
+                          return urls.map((url, idx) => (
+                            <div key={idx} className="relative w-full h-24 rounded-xl overflow-hidden border border-slate-200 shadow-sm group">
+                              <img src={url} alt={`Phase Proof ${idx+1}`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <a href={url} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/20 backdrop-blur-md text-white rounded-full hover:bg-white/30 transition-colors shadow-lg flex items-center justify-center">
+                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                                </a>
+                              </div>
+                            </div>
+                          ));
+                        })()}
                       </div>
                     ) : (
                       <div className="w-full h-12 border-2 border-dashed rounded-xl flex items-center justify-center border-slate-200 bg-slate-50">
@@ -190,6 +226,7 @@ export default function TowerProgress({ towerId, towerName, onBack }: TowerProgr
                     <input 
                       type="file" 
                       accept="image/*"
+                      multiple
                       onChange={(e) => handleImageUpload(e, phase.id)}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                       disabled={uploadingPhaseId === phase.id}
@@ -239,16 +276,50 @@ export default function TowerProgress({ towerId, towerName, onBack }: TowerProgr
                   </button>
                 </div>
 
-                <div className="p-8 overflow-y-auto bg-white min-h-[400px] flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 shadow-sm">
-                      <ImageIcon className="w-8 h-8 text-slate-300" />
+                <div className="p-8 overflow-y-auto bg-white min-h-[400px]">
+                  {phases.some(p => p.imageUrl) ? (
+                    <div className="space-y-8">
+                      {phases.filter(p => p.imageUrl).map(phase => {
+                        let urls: string[] = [];
+                        try {
+                          const parsed = JSON.parse(phase.imageUrl!);
+                          urls = Array.isArray(parsed) ? parsed : [phase.imageUrl!];
+                        } catch {
+                          urls = [phase.imageUrl!];
+                        }
+                        return (
+                          <div key={phase.id} className="bg-slate-50 border border-slate-100 rounded-2xl p-6">
+                            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                              <LayoutGrid className="w-5 h-5 text-blue-500" />
+                              {phase.name} Phase Images
+                            </h3>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                              {urls.map((url, idx) => (
+                                <div key={idx} className="relative w-full aspect-square rounded-xl overflow-hidden border border-slate-200 shadow-sm group">
+                                  <img src={url} alt={`${phase.name} Proof ${idx+1}`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <a href={url} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/20 backdrop-blur-md text-white rounded-full hover:bg-white/30 transition-colors shadow-lg">
+                                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                                    </a>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                    <h3 className="text-lg font-bold text-slate-800 mb-2">Analysis View (Read Only)</h3>
-                    <p className="text-sm text-slate-500 max-w-md mx-auto">
-                      AI visual analysis for {towerName} is displayed here. As a builder, you have view-only access to this comprehensive scan report.
-                    </p>
-                  </div>
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-center py-10">
+                      <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 shadow-sm">
+                        <ImageIcon className="w-8 h-8 text-slate-300" />
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-800 mb-2">No Images Uploaded</h3>
+                      <p className="text-sm text-slate-500 max-w-md mx-auto">
+                        There are currently no proof images uploaded across any construction phases for {towerName}.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             </motion.div>

@@ -21,7 +21,7 @@ export async function POST(request: Request) {
       await pgClient.query(`
         CREATE TABLE IF NOT EXISTS public.announcement (
           id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-          project_id uuid NOT NULL REFERENCES public.project(id) ON DELETE CASCADE,
+          project_id uuid NOT NULL,
           title text NOT NULL,
           message text NOT NULL,
           created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL

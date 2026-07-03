@@ -4,34 +4,34 @@ import { createClient } from '@supabase/supabase-js';
 
 async function getTowerTableNameByProjectId(supabaseAdmin: any, projectId: string) {
   const [f, s, c] = await Promise.all([
-    supabaseAdmin.from('flate_project').select('id').eq('id', projectId).single(),
-    supabaseAdmin.from('society_project').select('id').eq('id', projectId).single(),
-    supabaseAdmin.from('commercial_project').select('id').eq('id', projectId).single()
+    supabaseAdmin.from('flate_project').select('id').eq('id', projectId).limit(1),
+    supabaseAdmin.from('society_project').select('id').eq('id', projectId).limit(1),
+    supabaseAdmin.from('commercial_project').select('id').eq('id', projectId).limit(1)
   ]);
-  if (f.data) return 'flate_tower';
-  if (s.data) return 'society_section';
-  if (c.data) return 'commercial_tower';
+  if (f.data && f.data.length > 0) return 'flate_tower';
+  if (s.data && s.data.length > 0) return 'society_section';
+  if (c.data && c.data.length > 0) return 'commercial_tower';
   return 'flate_tower';
 }
 
 async function getTowerTableNameByTowerId(supabaseAdmin: any, towerId: string) {
   const [f, s, c] = await Promise.all([
-    supabaseAdmin.from('flate_tower').select('id').eq('id', towerId).single(),
-    supabaseAdmin.from('society_section').select('id').eq('id', towerId).single(),
-    supabaseAdmin.from('commercial_tower').select('id').eq('id', towerId).single()
+    supabaseAdmin.from('flate_tower').select('id').eq('id', towerId).limit(1),
+    supabaseAdmin.from('society_section').select('id').eq('id', towerId).limit(1),
+    supabaseAdmin.from('commercial_tower').select('id').eq('id', towerId).limit(1)
   ]);
-  if (f.data) return 'flate_tower';
-  if (s.data) return 'society_section';
-  if (c.data) return 'commercial_tower';
+  if (f.data && f.data.length > 0) return 'flate_tower';
+  if (s.data && s.data.length > 0) return 'society_section';
+  if (c.data && c.data.length > 0) return 'commercial_tower';
   return 'flate_tower';
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { projectId, towerName, totalFloors } = body;
+    const { projectId, towerName, totalFloors, totalHouses, numberSeries } = body;
 
-    if (!projectId || !towerName || !totalFloors) {
+    if (!projectId || !towerName || (!totalFloors && !totalHouses)) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -42,15 +42,17 @@ export async function POST(request: Request) {
 
     const tableName = await getTowerTableNameByProjectId(supabaseAdmin, projectId);
 
+    const payload: any = {
+      project_id: projectId,
+      tower_name: towerName,
+    };
+    if (totalFloors) payload.total_floors = parseInt(totalFloors, 10);
+    if (totalHouses) payload.total_houses = parseInt(totalHouses, 10);
+    if (numberSeries) payload.number_series = numberSeries;
+
     const { data, error } = await supabaseAdmin
       .from(tableName)
-      .insert([
-        {
-          project_id: projectId,
-          tower_name: towerName,
-          total_floors: parseInt(totalFloors, 10),
-        }
-      ])
+      .insert([payload])
       .select();
 
     if (error) {

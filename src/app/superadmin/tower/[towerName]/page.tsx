@@ -69,22 +69,40 @@ export default function TowerProgressPage({ params }: { params: Promise<{ towerN
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, phaseId: string) => {
     if (!e.target.files || e.target.files.length === 0) return;
     
-    const file = e.target.files[0];
     setUploadingPhaseId(phaseId);
 
-    const formData = new FormData();
-    formData.append('file', file);
-
     try {
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await response.json();
+      const uploadedUrls = [];
+      const phase = phases.find(p => p.id === phaseId);
+      let existingUrls: string[] = [];
+      if (phase?.imageUrl) {
+        try {
+          const parsed = JSON.parse(phase.imageUrl);
+          existingUrls = Array.isArray(parsed) ? parsed : [phase.imageUrl];
+        } catch {
+          existingUrls = [phase.imageUrl];
+        }
+      }
+
+      for (let i = 0; i < e.target.files.length; i++) {
+        const file = e.target.files[i];
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await response.json();
+        
+        if (!response.ok) throw new Error(data.error || 'Failed to upload image');
+        uploadedUrls.push(data.url);
+      }
       
-      if (!response.ok) throw new Error(data.error || 'Failed to upload image');
+      const allUrls = [...existingUrls, ...uploadedUrls];
+      const newImageUrlString = JSON.stringify(allUrls);
       
-      setPhases(prev => prev.map(p => p.id === phaseId ? { ...p, imageUrl: data.url } : p));
+      setPhases(prev => prev.map(p => p.id === phaseId ? { ...p, imageUrl: newImageUrlString } : p));
       
       if (towerId) {
         await fetch('/api/admin/tower', {
@@ -92,13 +110,13 @@ export default function TowerProgressPage({ params }: { params: Promise<{ towerN
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             id: towerId,
-            updates: { [`${phaseId}_image`]: data.url }
+            updates: { [`${phaseId}_image`]: newImageUrlString }
           })
         });
       }
     } catch (err: any) {
       console.error(err.message);
-      alert('Failed to upload image');
+      alert('Failed to upload image(s)');
     } finally {
       setUploadingPhaseId(null);
     }
@@ -172,9 +190,33 @@ export default function TowerProgressPage({ params }: { params: Promise<{ towerN
                 {/* Proof Image Section if Completed */}
                 {phase.progress === 100 && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-3">
+                    <input type="file" id={`upload-${phase.id}`} className="hidden" accept="image/*" multiple onChange={(e) => handleImageUpload(e, phase.id)} disabled={uploadingPhaseId === phase.id} />
+                    <label htmlFor={`upload-${phase.id}`} className="flex items-center justify-center gap-2 w-full py-2 mb-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg cursor-pointer transition-colors">
+                      <UploadCloud className="w-4 h-4 text-slate-400" />
+                      <span className="text-xs font-bold text-slate-600">{uploadingPhaseId === phase.id ? 'Uploading...' : 'Add Evidence'}</span>
+                    </label>
+                    
                     {phase.imageUrl ? (
-                      <div className="relative w-full h-32 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-                        <img src={phase.imageUrl} alt="Phase Proof" className="w-full h-full object-cover" />
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {(() => {
+                          let urls: string[] = [];
+                          try {
+                            const parsed = JSON.parse(phase.imageUrl);
+                            urls = Array.isArray(parsed) ? parsed : [phase.imageUrl];
+                          } catch {
+                            urls = [phase.imageUrl];
+                          }
+                          return urls.map((url, idx) => (
+                            <div key={idx} className="relative w-full h-24 rounded-xl overflow-hidden border border-slate-200 shadow-sm group">
+                              <img src={url} alt={`Phase Proof ${idx+1}`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <a href={url} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/20 backdrop-blur-md text-white rounded-full hover:bg-white/30 transition-colors shadow-lg">
+                                  <ExternalLink className="w-4 h-4" />
+                                </a>
+                              </div>
+                            </div>
+                          ));
+                        })()}
                       </div>
                     ) : (
                       <div className="w-full h-12 border-2 border-dashed rounded-xl flex items-center justify-center border-slate-200 bg-slate-50">

@@ -3,15 +3,14 @@ export const dynamic = 'force-dynamic';
 import { createClient } from '@supabase/supabase-js';
 
 async function getCustomerTableNameByProjectId(supabaseAdmin: any, projectId: string) {
-  if (!projectId) return 'flate_customer';
   const [f, s, c] = await Promise.all([
-    supabaseAdmin.from('flate_project').select('id').eq('id', projectId).single(),
-    supabaseAdmin.from('society_project').select('id').eq('id', projectId).single(),
-    supabaseAdmin.from('commercial_project').select('id').eq('id', projectId).single()
+    supabaseAdmin.from('flate_project').select('id').eq('id', projectId).limit(1),
+    supabaseAdmin.from('society_project').select('id').eq('id', projectId).limit(1),
+    supabaseAdmin.from('commercial_project').select('id').eq('id', projectId).limit(1)
   ]);
-  if (f.data) return 'flate_customer';
-  if (s.data) return 'society_customer';
-  if (c.data) return 'commercial_customer';
+  if (f.data && f.data.length > 0) return 'flate_customer';
+  if (s.data && s.data.length > 0) return 'society_customer';
+  if (c.data && c.data.length > 0) return 'commercial_customer';
   return 'flate_customer';
 }
 

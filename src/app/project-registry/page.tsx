@@ -19,6 +19,10 @@ export default function BuilderDashboard() {
   const [customers, setCustomers] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [towers, setTowers] = useState<any[]>([]);
+  
+  // Project Filters
+  const [projectTypeFilter, setProjectTypeFilter] = useState('All');
+  const [projectNameSearch, setProjectNameSearch] = useState('');
 
   // Show form toggles (now used for Modals)
   const [showBuilderForm, setShowBuilderForm] = useState(false);
@@ -53,7 +57,7 @@ export default function BuilderDashboard() {
   });
 
   const [towerData, setTowerData] = useState({
-    towerName: '', totalFloors: ''
+    towerName: '', totalFloors: '', totalHouses: '', numberSeries: ''
   });
 
   useEffect(() => {
@@ -286,7 +290,9 @@ export default function BuilderDashboard() {
         body: JSON.stringify({
           projectId: selectedProjectForSidebar?.id || selectedProjectForSidebar?._id,
           towerName: towerData.towerName,
-          totalFloors: towerData.totalFloors
+          totalFloors: towerData.totalFloors,
+          totalHouses: towerData.totalHouses,
+          numberSeries: towerData.numberSeries
         }),
       });
       const data = await response.json();
@@ -298,7 +304,7 @@ export default function BuilderDashboard() {
       setTimeout(() => {
         setSuccess(false);
         setShowTowerForm(false);
-        setTowerData({ towerName: '', totalFloors: '' });
+        setTowerData({ towerName: '', totalFloors: '', totalHouses: '', numberSeries: '' });
       }, 1500);
     } catch (err: any) {
       setError(err.message);
@@ -505,9 +511,9 @@ export default function BuilderDashboard() {
                       </div>
                     </div>
                       
-                    {activeProjectSubTab === 'progress' && !selectedTowerForProgress && (
+                    {activeProjectSubTab === 'progress' && selectedProjectForSidebar && (
                       <button onClick={() => setShowTowerForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2 shrink-0">
-                        <Plus className="w-4 h-4" /> Add Tower
+                        <Plus className="w-4 h-4" /> {selectedProjectForSidebar?.project_type === 'Society' ? 'Add Section' : 'Add Tower'}
                       </button>
                     )}
                     {activeProjectSubTab === 'announcement' && (
@@ -728,26 +734,67 @@ export default function BuilderDashboard() {
                   )}
                   {/* PROJECT LIST VIEW */}
                   {activeTab === 'project' && !activeProjectSubTab && (
-                    <div className="overflow-x-auto -mx-4 sm:-mx-0">
-                      <table className="w-full text-left border-collapse min-w-[600px]">
-                        <thead>
-                          <tr className="border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
-                            <th className="pb-4 px-4">Project Name</th>
-                            <th className="pb-4 px-4">Location</th>
-                            <th className="pb-4 px-4">Expected Possession</th>
-                            <th className="pb-4 px-4 text-right">Status</th>
-                            <th className="pb-4 px-4 text-right">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody className="text-slate-700">
-                          {projects.length === 0 ? (
-                            <tr>
-                              <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
-                                No projects registered in the network yet.
-                              </td>
+                    <div className="flex flex-col gap-6">
+                      {/* Filters */}
+                      <div className="flex flex-col sm:flex-row items-center gap-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                        <div className="w-full sm:w-1/3">
+                          <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-widest">Filter by Type</label>
+                          <select 
+                            value={projectTypeFilter}
+                            onChange={(e) => { setProjectTypeFilter(e.target.value); setProjectNameSearch(''); }}
+                            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm appearance-none cursor-pointer"
+                          >
+                            <option value="All">All Types</option>
+                            <option value="Flat">Flat</option>
+                            <option value="Commercial">Commercial</option>
+                            <option value="Society">Society</option>
+                          </select>
+                        </div>
+                        <div className="w-full sm:w-2/3">
+                          <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-widest">Filter by Name</label>
+                          <select 
+                            value={projectNameSearch}
+                            onChange={(e) => setProjectNameSearch(e.target.value)}
+                            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm appearance-none cursor-pointer"
+                          >
+                            <option value="">All Projects</option>
+                            {projects
+                              .filter(p => projectTypeFilter === 'All' || p.project_type === projectTypeFilter)
+                              .map((project) => (
+                                <option key={project.id} value={project.project_name}>
+                                  {project.project_name}
+                                </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="overflow-x-auto -mx-4 sm:-mx-0">
+                        <table className="w-full text-left border-collapse min-w-[600px]">
+                          <thead>
+                            <tr className="border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
+                              <th className="pb-4 px-4">Project Name</th>
+                              <th className="pb-4 px-4">Location</th>
+                              <th className="pb-4 px-4">Expected Possession</th>
+                              <th className="pb-4 px-4 text-right">Status</th>
+                              <th className="pb-4 px-4 text-right">Actions</th>
                             </tr>
-                          ) : (
-                            projects.map((project) => (
+                          </thead>
+                          <tbody className="text-slate-700">
+                            {projects
+                              .filter(p => projectTypeFilter === 'All' || p.project_type === projectTypeFilter)
+                              .filter(p => projectNameSearch === '' || p.project_name === projectNameSearch)
+                              .length === 0 ? (
+                              <tr>
+                                <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
+                                  No projects found matching the filters.
+                                </td>
+                              </tr>
+                            ) : (
+                              projects
+                                .filter(p => projectTypeFilter === 'All' || p.project_type === projectTypeFilter)
+                                .filter(p => projectNameSearch === '' || p.project_name === projectNameSearch)
+                                .map((project) => (
                               <tr key={project.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group">
                                 <td className="py-5 px-4 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{project.project_name}</td>
                                 <td className="py-5 px-4 text-slate-600 font-medium">{project.location || 'N/A'}</td>
@@ -775,6 +822,7 @@ export default function BuilderDashboard() {
                         </tbody>
                       </table>
                     </div>
+                  </div>
                   )}
                 </div>
               </motion.div>
@@ -918,8 +966,8 @@ export default function BuilderDashboard() {
                     <Building className="w-6 h-6" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-black text-slate-900 tracking-tight">Add Tower</h2>
-                    <p className="text-sm font-semibold text-slate-500">Configure tower details</p>
+                    <h2 className="text-xl font-black text-slate-900 tracking-tight">{selectedProjectForSidebar?.project_type === 'Society' ? 'Add Section' : 'Add Tower'}</h2>
+                    <p className="text-sm font-semibold text-slate-500">Configure {selectedProjectForSidebar?.project_type === 'Society' ? 'section' : 'tower'} details</p>
                   </div>
                 </div>
                 <button onClick={() => setShowTowerForm(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
@@ -934,12 +982,30 @@ export default function BuilderDashboard() {
                 {!success && (
                   <form onSubmit={handleTowerSubmit} className="space-y-6">
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Tower Name / Number</label>
-                      <input type="text" name="towerName" required value={towerData.towerName} onChange={handleTowerChange} placeholder="e.g. Tower A" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
+                      <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">{selectedProjectForSidebar?.project_type === 'Society' ? 'Section' : 'Tower'} Name / Number</label>
+                      <input type="text" name="towerName" required value={towerData.towerName} onChange={handleTowerChange} placeholder={selectedProjectForSidebar?.project_type === 'Society' ? "e.g. Section A" : "e.g. Tower A"} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
                     </div>
+                    {selectedProjectForSidebar?.project_type === 'Society' ? (
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Total House</label>
+                        <input type="number" name="totalHouses" required min="1" value={towerData.totalHouses} onChange={handleTowerChange} placeholder="e.g. 50" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
+                      </div>
+                    ) : (
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Total Floors</label>
+                        <input type="number" name="totalFloors" required min="1" value={towerData.totalFloors} onChange={handleTowerChange} placeholder="e.g. 15" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
+                      </div>
+                    )}
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Total Floors</label>
-                      <input type="number" name="totalFloors" required min="1" value={towerData.totalFloors} onChange={handleTowerChange} placeholder="e.g. 15" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
+                      <label className="block text-xs font-bold text-slate-500 mb-3 uppercase tracking-widest">Number Series</label>
+                      <div className="flex flex-wrap gap-4">
+                        {['1-10', '101-110', '1001-1010'].map((series) => (
+                          <label key={series} className={`flex items-center gap-2 px-4 py-3 border rounded-xl cursor-pointer transition-all ${towerData.numberSeries === series ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}`}>
+                            <input type="radio" name="numberSeries" value={series} checked={towerData.numberSeries === series} onChange={handleTowerChange} className="w-4 h-4 text-blue-600 focus:ring-blue-500" required />
+                            <span className="font-semibold">{series}</span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
                     <div className="pt-6 mt-4 flex justify-end border-t border-slate-100">
                       <button type="submit" disabled={isSubmitting} className="group relative px-8 py-3.5 bg-slate-900 text-white font-extrabold rounded-xl shadow-[0_10px_20px_rgba(0,0,0,0.1)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 min-w-[160px] flex justify-center items-center">
@@ -1307,8 +1373,8 @@ export default function BuilderDashboard() {
                     <Building className="w-6 h-6" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-black text-slate-900 tracking-tight">Add Tower</h2>
-                    <p className="text-sm font-semibold text-slate-500">Create a new tower for this project</p>
+                    <h2 className="text-xl font-black text-slate-900 tracking-tight">{selectedProjectForSidebar?.project_type === 'Society' ? 'Add Section' : 'Add Tower'}</h2>
+                    <p className="text-sm font-semibold text-slate-500">Create a new {selectedProjectForSidebar?.project_type === 'Society' ? 'section' : 'tower'} for this project</p>
                   </div>
                 </div>
                 <button onClick={() => setShowTowerForm(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
@@ -1322,17 +1388,35 @@ export default function BuilderDashboard() {
                 {!success && (
                   <form onSubmit={handleTowerSubmit} className="space-y-6">
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Tower Name *</label>
-                      <input type="text" name="towerName" required value={towerData.towerName} onChange={handleTowerChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. Tower A" />
+                      <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">{selectedProjectForSidebar?.project_type === 'Society' ? 'Section Name *' : 'Tower Name *'}</label>
+                      <input type="text" name="towerName" required value={towerData.towerName} onChange={handleTowerChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder={selectedProjectForSidebar?.project_type === 'Society' ? "e.g. Section A" : "e.g. Tower A"} />
                     </div>
+                    {selectedProjectForSidebar?.project_type === 'Society' ? (
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Total House</label>
+                        <input type="number" name="totalHouses" required min="1" value={towerData.totalHouses} onChange={handleTowerChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. 50" />
+                      </div>
+                    ) : (
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Total Floors</label>
+                        <input type="number" name="totalFloors" required min="1" value={towerData.totalFloors} onChange={handleTowerChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. 15" />
+                      </div>
+                    )}
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Total Floors *</label>
-                      <input type="number" name="totalFloors" required min="1" value={towerData.totalFloors} onChange={handleTowerChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. 15" />
+                      <label className="block text-xs font-bold text-slate-500 mb-3 uppercase tracking-widest">Number Series</label>
+                      <div className="flex flex-wrap gap-4">
+                        {['1-10', '101-110', '1001-1010'].map((series) => (
+                          <label key={series} className={`flex items-center gap-2 px-4 py-3 border rounded-xl cursor-pointer transition-all ${towerData.numberSeries === series ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}`}>
+                            <input type="radio" name="numberSeries" value={series} checked={towerData.numberSeries === series} onChange={handleTowerChange} className="w-4 h-4 text-blue-600 focus:ring-blue-500" required />
+                            <span className="font-semibold">{series}</span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
                     
                     <div className="pt-6 mt-4 flex justify-end border-t border-slate-100">
                       <button type="submit" disabled={isSubmitting || success} className="group relative px-8 py-3.5 bg-slate-900 text-white font-extrabold rounded-xl shadow-[0_10px_20px_rgba(0,0,0,0.1)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:hover:translate-y-0 min-w-[160px] flex justify-center items-center overflow-hidden">
-                        <span className="relative z-10">{isSubmitting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Add Tower'}</span>
+                        <span className="relative z-10">{isSubmitting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : (selectedProjectForSidebar?.project_type === 'Society' ? 'Save Section' : 'Add Tower')}</span>
                       </button>
                     </div>
                   </form>
