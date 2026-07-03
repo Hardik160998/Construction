@@ -12,7 +12,7 @@ export default function TowerProgressPage({ params }: { params: Promise<{ towerN
   const searchParams = useSearchParams();
   const towerId = searchParams.get('id');
 
-  const [phases, setPhases] = useState([
+  const [phases, setPhases] = useState<{ id: string; name: string; progress: number; imageUrl: string | null }[]>([
     { id: 'foundation', name: 'Foundation', progress: 0, imageUrl: null },
     { id: 'structure', name: 'Structure', progress: 0, imageUrl: null },
     { id: 'brickwork', name: 'Brickwork', progress: 0, imageUrl: null },
