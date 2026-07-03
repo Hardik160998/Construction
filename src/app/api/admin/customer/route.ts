@@ -2,10 +2,23 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 import { createClient } from '@supabase/supabase-js';
 
+async function getCustomerTableNameByProjectId(supabaseAdmin: any, projectId: string) {
+  if (!projectId) return 'flate_customer';
+  const [f, s, c] = await Promise.all([
+    supabaseAdmin.from('flate_project').select('id').eq('id', projectId).single(),
+    supabaseAdmin.from('society_project').select('id').eq('id', projectId).single(),
+    supabaseAdmin.from('commercial_project').select('id').eq('id', projectId).single()
+  ]);
+  if (f.data) return 'flate_customer';
+  if (s.data) return 'society_customer';
+  if (c.data) return 'commercial_customer';
+  return 'flate_customer';
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { builderId, firstName, lastName, email, phone, floor, towerName, flatName, areaSqft } = body;
+    const { builderId, projectId, firstName, lastName, email, phone, floor, towerName, flatName, areaSqft } = body;
 
     if (!builderId || !firstName || !lastName || !email) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -16,11 +29,14 @@ export async function POST(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
     );
 
+    const tableName = await getCustomerTableNameByProjectId(supabaseAdmin, projectId);
+
     const { data, error } = await supabaseAdmin
-      .from('customer')
+      .from(tableName)
       .insert([
         {
           builder_id: builderId,
+          project_id: projectId || null,
           first_name: firstName,
           last_name: lastName,
           email: email,
@@ -57,14 +73,19 @@ export async function GET(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
     );
 
-    const { data, error } = await supabaseAdmin
-      .from('customer')
-      .select('id, first_name, last_name, email, phone, floor, tower_name, flat_name, area_sqft, project_id, builder_id, created_at')
-      .order('created_at', { ascending: false });
+    const [f, s, c] = await Promise.all([
+      supabaseAdmin.from('flate_customer').select('id, first_name, last_name, email, phone, floor, tower_name, flat_name, area_sqft, project_id, builder_id, created_at'),
+      supabaseAdmin.from('society_customer').select('id, first_name, last_name, email, phone, floor, tower_name, flat_name, area_sqft, project_id, builder_id, created_at'),
+      supabaseAdmin.from('commercial_customer').select('id, first_name, last_name, email, phone, floor, tower_name, flat_name, area_sqft, project_id, builder_id, created_at')
+    ]);
 
-    if (error) throw error;
+    const allCustomers = [
+      ...(f.data || []),
+      ...(s.data || []),
+      ...(c.data || [])
+    ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-    return NextResponse.json({ success: true, customers: data || [] });
+    return NextResponse.json({ success: true, customers: allCustomers });
   } catch (error: any) {
     console.error('API Error:', error);
     return NextResponse.json({ error: 'Failed to fetch customers.' }, { status: 500 });

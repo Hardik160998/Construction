@@ -47,7 +47,7 @@ export default function AdminDashboard() {
   });
 
   const [projectData, setProjectData] = useState({
-    projectName: '', location: '', status: '', description: '', coverImgUrl: '', expectedPossession: '', customerId: ''
+    projectName: '', location: '', status: '', description: '', coverImgUrl: '', expectedPossession: '', customerId: '', projectType: ''
   });
 
   const [towerData, setTowerData] = useState({
@@ -258,7 +258,7 @@ export default function AdminDashboard() {
       if (!response.ok) throw new Error(data.error || 'Failed to add project');
 
       setSuccess(true);
-      setProjectData({ projectName: '', location: '', status: '', description: '', coverImgUrl: '', expectedPossession: '', customerId: '' });
+      setProjectData({ projectName: '', location: '', status: '', description: '', coverImgUrl: '', expectedPossession: '', customerId: '', projectType: '' });
       fetchProjects();
       setTimeout(() => { setSuccess(false); setShowProjectForm(false); }, 2000);
     } catch (err: any) {
@@ -735,7 +735,7 @@ export default function AdminDashboard() {
                                 </td>
                                 <td className="py-5 px-4 text-right">
                                   <button 
-                                    onClick={() => setSelectedProjectForSidebar(project)}
+                                    onClick={() => { setSelectedProjectForSidebar(project); setActiveProjectSubTab('progress'); }}
                                     className="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors"
                                   >
                                     View
@@ -908,23 +908,8 @@ export default function AdminDashboard() {
                 {showProjectForm && (
                   <form onSubmit={handleProjectSubmit} className="space-y-6">
                     <div className="grid sm:grid-cols-2 gap-6">
-                      <div className="sm:col-span-2">
-                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Assign to Customer</label>
-                        <div className="relative">
-                          <select 
-                            name="customerId" value={projectData.customerId} onChange={handleProjectChange}
-                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
-                          >
-                            <option value="" className="text-slate-400">-- Select a Customer (Optional) --</option>
-                            {customers.map(c => (
-                              <option key={c.id} value={c.id} className="text-slate-900">{c.first_name} {c.last_name}</option>
-                            ))}
-                          </select>
-                          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                            <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
-                          </div>
-                        </div>
-                      </div>
+
+
                       <div className="sm:col-span-2">
                         <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Project Name *</label>
                         <input type="text" name="projectName" required value={projectData.projectName} onChange={handleProjectChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. Skyline Towers" />
@@ -948,6 +933,27 @@ export default function AdminDashboard() {
                             <option value="Planning" className="text-slate-900">Planning</option>
                             <option value="Under Construction" className="text-slate-900">Under Construction</option>
                             <option value="Completed" className="text-slate-900">Completed</option>
+                          </select>
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Expected Possession</label>
+                        <input type="date" name="expectedPossession" value={projectData.expectedPossession} onChange={handleProjectChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Project Type</label>
+                        <div className="relative">
+                          <select 
+                            name="projectType" value={projectData.projectType} onChange={handleProjectChange}
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
+                          >
+                            <option value="" className="text-slate-400">-- Select Type --</option>
+                            <option value="Flat" className="text-slate-900">Flat</option>
+                            <option value="Society" className="text-slate-900">Society</option>
+                            <option value="Commercial" className="text-slate-900">Commercial</option>
                           </select>
                           <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                             <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
@@ -986,10 +992,6 @@ export default function AdminDashboard() {
                             </label>
                           )}
                         </div>
-                      </div>
-                      <div className="sm:col-span-2">
-                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Expected Possession</label>
-                        <input type="date" name="expectedPossession" value={projectData.expectedPossession} onChange={handleProjectChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
                       </div>
                     </div>
                     <div className="pt-6 mt-4 flex justify-end border-t border-slate-100">

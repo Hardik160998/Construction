@@ -2,6 +2,30 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 import { createClient } from '@supabase/supabase-js';
 
+async function getTowerTableNameByProjectId(supabaseAdmin: any, projectId: string) {
+  const [f, s, c] = await Promise.all([
+    supabaseAdmin.from('flate_project').select('id').eq('id', projectId).single(),
+    supabaseAdmin.from('society_project').select('id').eq('id', projectId).single(),
+    supabaseAdmin.from('commercial_project').select('id').eq('id', projectId).single()
+  ]);
+  if (f.data) return 'flate_tower';
+  if (s.data) return 'society_section';
+  if (c.data) return 'commercial_tower';
+  return 'flate_tower';
+}
+
+async function getTowerTableNameByTowerId(supabaseAdmin: any, towerId: string) {
+  const [f, s, c] = await Promise.all([
+    supabaseAdmin.from('flate_tower').select('id').eq('id', towerId).single(),
+    supabaseAdmin.from('society_section').select('id').eq('id', towerId).single(),
+    supabaseAdmin.from('commercial_tower').select('id').eq('id', towerId).single()
+  ]);
+  if (f.data) return 'flate_tower';
+  if (s.data) return 'society_section';
+  if (c.data) return 'commercial_tower';
+  return 'flate_tower';
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -16,8 +40,10 @@ export async function POST(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
     );
 
+    const tableName = await getTowerTableNameByProjectId(supabaseAdmin, projectId);
+
     const { data, error } = await supabaseAdmin
-      .from('tower')
+      .from(tableName)
       .insert([
         {
           project_id: projectId,
@@ -50,20 +76,34 @@ export async function GET(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
     );
 
-    let query = supabaseAdmin.from('tower').select('*').order('created_at', { ascending: true });
+    if (id) {
+      const tableName = await getTowerTableNameByTowerId(supabaseAdmin, id);
+      const { data, error } = await supabaseAdmin.from(tableName).select('*').eq('id', id).single();
+      if (error) throw error;
+      return NextResponse.json({ success: true, towers: [data] });
+    } 
     
     if (projectId) {
-      query = query.eq('project_id', projectId);
+      const tableName = await getTowerTableNameByProjectId(supabaseAdmin, projectId);
+      const { data, error } = await supabaseAdmin.from(tableName).select('*').eq('project_id', projectId).order('created_at', { ascending: true });
+      if (error) throw error;
+      return NextResponse.json({ success: true, towers: data || [] });
     }
-    if (id) {
-      query = query.eq('id', id);
-    }
 
-    const { data, error } = await query;
+    // Fetch all towers from all tables
+    const [f, s, c] = await Promise.all([
+      supabaseAdmin.from('flate_tower').select('*'),
+      supabaseAdmin.from('society_section').select('*'),
+      supabaseAdmin.from('commercial_tower').select('*')
+    ]);
 
-    if (error) throw error;
+    const allTowers = [
+      ...(f.data || []),
+      ...(s.data || []),
+      ...(c.data || [])
+    ].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
-    return NextResponse.json({ success: true, towers: data || [] });
+    return NextResponse.json({ success: true, towers: allTowers });
   } catch (error: any) {
     console.error('API Error:', error);
     return NextResponse.json({ error: 'Failed to fetch towers.' }, { status: 500 });
@@ -84,8 +124,10 @@ export async function PATCH(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
     );
 
+    const tableName = await getTowerTableNameByTowerId(supabaseAdmin, id);
+
     const { data, error } = await supabaseAdmin
-      .from('tower')
+      .from(tableName)
       .update(updates)
       .eq('id', id)
       .select();
