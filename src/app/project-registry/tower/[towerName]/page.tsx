@@ -3,7 +3,7 @@
 import { use, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ArrowLeft, Building2, LayoutGrid, UploadCloud, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Building2, LayoutGrid, UploadCloud, Image as ImageIcon, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function TowerProgressPage({ params }: { params: Promise<{ towerName: string }> }) {
