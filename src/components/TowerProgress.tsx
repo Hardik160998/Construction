@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Building2, LayoutGrid, UploadCloud, Image as ImageIcon, Camera, X } from 'lucide-react';
+import { ArrowLeft, Building2, LayoutGrid, UploadCloud, Image as ImageIcon, Camera, X, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface TowerProgressProps {
@@ -9,7 +9,7 @@ interface TowerProgressProps {
 }
 
 export default function TowerProgress({ towerId, towerName, onBack }: TowerProgressProps) {
-  const [phases, setPhases] = useState([
+  const [phases, setPhases] = useState<{ id: string; name: string; progress: number; imageUrl: string | null }[]>([
     { id: 'foundation', name: 'Foundation', progress: 0, imageUrl: null },
     { id: 'structure', name: 'Structure', progress: 0, imageUrl: null },
     { id: 'brickwork', name: 'Brickwork', progress: 0, imageUrl: null },
