@@ -17,9 +17,9 @@ async function getCustomerTableNameByProjectId(supabaseAdmin: any, projectId: st
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { builderId, projectId, firstName, lastName, email, phone, floor, towerName, flatName, areaSqft } = body;
+    const { builderId, projectId, customerType, firstName, lastName, email, phone, floor, towerName, flatName, flatNumber, areaSqft, bhk } = body;
 
-    if (!builderId || !firstName || !lastName || !email) {
+    if (!firstName || !lastName || !email) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -28,13 +28,58 @@ export async function POST(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
     );
 
-    const tableName = await getCustomerTableNameByProjectId(supabaseAdmin, projectId);
+    let tableName = 'flate_customer';
+    if (customerType === 'Society') tableName = 'society_customer';
+    else if (customerType === 'Commercial') tableName = 'commercial_customer';
+    else if (customerType === 'Flat') tableName = 'flate_customer';
+    else if (projectId) {
+      tableName = await getCustomerTableNameByProjectId(supabaseAdmin, projectId);
+    }
+
+    if (tableName === 'flate_customer' && projectId && towerName && flatNumber) {
+      const { data: towerData } = await supabaseAdmin
+        .from('flate_tower')
+        .select('number_series')
+        .eq('project_id', projectId)
+        .eq('tower_name', towerName)
+        .single();
+      
+      if (towerData && towerData.number_series) {
+        const numMatch = flatNumber.match(/\d+/);
+        const num = numMatch ? parseInt(numMatch[0], 10) : NaN;
+        
+        if (!isNaN(num)) {
+          let isValid = false;
+          const ranges = towerData.number_series.split(',').map((s: string) => s.trim());
+          for (const range of ranges) {
+            if (range.includes('-')) {
+              const parts = range.split('-');
+              const start = parseInt(parts[0], 10);
+              const end = parseInt(parts[1], 10);
+              if (!isNaN(start) && !isNaN(end) && num >= start && num <= end) {
+                isValid = true;
+                break;
+              }
+            } else {
+              const val = parseInt(range, 10);
+              if (!isNaN(val) && num === val) {
+                isValid = true;
+                break;
+              }
+            }
+          }
+          if (!isValid) {
+            return NextResponse.json({ error: `Flat number ${flatNumber} is outside the allowed number series (${towerData.number_series}) for tower ${towerName}.` }, { status: 400 });
+          }
+        }
+      }
+    }
 
     const { data, error } = await supabaseAdmin
       .from(tableName)
       .insert([
         {
-          builder_id: builderId,
+          builder_id: builderId || null,
           project_id: projectId || null,
           first_name: firstName,
           last_name: lastName,
@@ -43,7 +88,9 @@ export async function POST(request: Request) {
           floor: floor || null,
           tower_name: towerName || null,
           flat_name: flatName || null,
+          flat_number: flatNumber || null,
           area_sqft: areaSqft || null,
+          bhk: bhk || null,
         }
       ])
       .select();
@@ -73,9 +120,9 @@ export async function GET(request: Request) {
     );
 
     const [f, s, c] = await Promise.all([
-      supabaseAdmin.from('flate_customer').select('id, first_name, last_name, email, phone, floor, tower_name, flat_name, area_sqft, project_id, builder_id, created_at'),
-      supabaseAdmin.from('society_customer').select('id, first_name, last_name, email, phone, floor, tower_name, flat_name, area_sqft, project_id, builder_id, created_at'),
-      supabaseAdmin.from('commercial_customer').select('id, first_name, last_name, email, phone, floor, tower_name, flat_name, area_sqft, project_id, builder_id, created_at')
+      supabaseAdmin.from('flate_customer').select('id, first_name, last_name, email, phone, floor, tower_name, flat_name, flat_number, area_sqft, project_id, builder_id, created_at'),
+      supabaseAdmin.from('society_customer').select('id, first_name, last_name, email, phone, floor, tower_name, flat_name, flat_number, area_sqft, project_id, builder_id, created_at'),
+      supabaseAdmin.from('commercial_customer').select('id, first_name, last_name, email, phone, floor, tower_name, flat_name, flat_number, area_sqft, project_id, builder_id, created_at')
     ]);
 
     const allCustomers = [

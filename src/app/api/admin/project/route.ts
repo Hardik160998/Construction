@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { projectName, location, status, description, coverImgUrl, expectedPossession, customerId, projectType } = body;
+    const { projectName, location, status, description, coverImgUrl, expectedPossession, customerId, projectType, bhk, areaSqft } = body;
 
     if (!projectName) {
       return NextResponse.json({ error: 'Project name is required' }, { status: 400 });
@@ -23,20 +23,24 @@ export async function POST(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
     );
 
+    const payload: any = {
+      project_name: projectName,
+      location: location || null,
+      status: status || null,
+      description: description || null,
+      cover_img_url: coverImgUrl || null,
+      expected_possession: expectedPossession || null,
+      customer_id: customerId || null,
+      project_type: projectType || null,
+    };
+    if (tableName === 'flate_project') {
+      if (bhk) payload.bhk = bhk;
+      if (areaSqft) payload.area_sqft = areaSqft;
+    }
+
     const { data, error } = await supabaseAdmin
       .from(tableName)
-      .insert([
-        {
-          project_name: projectName,
-          location: location || null,
-          status: status || null,
-          description: description || null,
-          cover_img_url: coverImgUrl || null,
-          expected_possession: expectedPossession || null,
-          customer_id: customerId || null,
-          project_type: projectType || null,
-        }
-      ])
+      .insert([payload])
       .select();
 
     if (error) {
