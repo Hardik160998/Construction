@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { projectName, location, status, description, coverImgUrl, expectedPossession, customerId, projectType, bhk, areaSqft } = body;
+    const { projectName, location, status, description, coverImgUrl, expectedPossession, customerId, projectType, bhk, areaSqft, roomNumber } = body;
 
     if (!projectName) {
       return NextResponse.json({ error: 'Project name is required' }, { status: 400 });
@@ -36,6 +36,8 @@ export async function POST(request: Request) {
     if (tableName === 'flate_project') {
       if (bhk) payload.bhk = bhk;
       if (areaSqft) payload.area_sqft = areaSqft;
+    } else if (tableName === 'society_project') {
+      if (roomNumber) payload.room_number = roomNumber;
     }
 
     const { data, error } = await supabaseAdmin
@@ -64,7 +66,7 @@ export async function GET(request: Request) {
 
     const [flats, societies, commercials] = await Promise.all([
       supabaseAdmin.from('flate_project').select('id, project_name, location, status, description, cover_img_url, expected_possession, customer_id, project_type, created_at, bhk, area_sqft'),
-      supabaseAdmin.from('society_project').select('id, project_name, location, status, description, cover_img_url, expected_possession, customer_id, project_type, created_at'),
+      supabaseAdmin.from('society_project').select('id, project_name, location, status, description, cover_img_url, expected_possession, customer_id, project_type, created_at, room_number'),
       supabaseAdmin.from('commercial_project').select('id, project_name, location, status, description, cover_img_url, expected_possession, customer_id, project_type, created_at')
     ]);
 

@@ -29,7 +29,7 @@ async function getTowerTableNameByTowerId(supabaseAdmin: any, towerId: string) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { projectId, towerName, totalFloors, totalHouses, numberSeries } = body;
+    const { projectId, towerName, totalFloors, totalHouses, numberSeries, bhk } = body;
 
     if (!projectId || !towerName || (!totalFloors && !totalHouses)) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -49,6 +49,7 @@ export async function POST(request: Request) {
     if (totalFloors) payload.total_floors = parseInt(totalFloors, 10);
     if (totalHouses) payload.total_houses = parseInt(totalHouses, 10);
     if (numberSeries) payload.number_series = numberSeries;
+    if (bhk) payload.bhk = bhk;
 
     const { data, error } = await supabaseAdmin
       .from(tableName)

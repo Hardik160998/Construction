@@ -55,11 +55,11 @@ export default function BuilderDashboard() {
   });
 
   const [projectData, setProjectData] = useState({
-    projectName: '', location: '', status: '', description: '', coverImgUrl: '', expectedPossession: '', customerId: '', projectType: '', bhk: '', areaSqft: ''
+    projectName: '', location: '', status: '', description: '', coverImgUrl: '', expectedPossession: '', customerId: '', projectType: '', bhk: '', areaSqft: '', roomNumber: '', roomNumber: ''
   });
 
   const [towerData, setTowerData] = useState({
-    towerName: '', totalFloors: '', totalHouses: '', numberSeries: ''
+    towerName: '', totalFloors: '', totalHouses: '', numberSeries: '', bhk: ''
   });
 
   const [projectTowers, setProjectTowers] = useState<any[]>([]);
@@ -131,8 +131,16 @@ export default function BuilderDashboard() {
             } else {
               suffix = n.slice(-2);
             }
+            
+            if (floorStr === 'Ground') {
+              return `G${suffix}`;
+            } else {
+              return `${floorStr}${suffix}`;
+            }
           } else {
-            suffix = n.padStart(2, '0');
+            // For 1-4 series, don't prepend the floor and don't zero-pad.
+            // Just return the literal flat number '1', '2', '3', '4'.
+            return n;
           }
         }
 
@@ -397,7 +405,8 @@ export default function BuilderDashboard() {
           towerName: towerData.towerName,
           totalFloors: towerData.totalFloors,
           totalHouses: towerData.totalHouses,
-          numberSeries: towerData.numberSeries
+          numberSeries: towerData.numberSeries,
+          bhk: towerData.bhk
         }),
       });
       const data = await response.json();
@@ -643,7 +652,7 @@ export default function BuilderDashboard() {
                           </div>
                           <div>
                             <h3 className="text-xl font-bold text-slate-900 mb-0.5">{tower.tower_name}</h3>
-                            <p className="text-sm font-semibold text-slate-500">{tower.total_floors} Floors</p>
+                            <p className="text-sm font-semibold text-slate-500">{tower.total_floors || tower.total_houses} {tower.total_floors ? 'Floors' : 'Houses'} {tower.bhk && <span className="ml-2 inline-block px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-lg">{tower.bhk}</span>}</p>
                           </div>
                         </div>
                         <button onClick={() => setSelectedTowerForProgress(tower)} className="mt-6 w-full block text-center py-2.5 bg-slate-50 text-slate-700 font-bold rounded-xl hover:bg-slate-100 transition-colors text-sm">
@@ -1164,6 +1173,7 @@ export default function BuilderDashboard() {
               <div className="p-8 overflow-y-auto bg-white">
                 {error && <div className="mb-6 p-4 bg-red-50 text-red-600 border border-red-100 rounded-xl font-semibold text-sm flex items-center gap-3"><AlertCircle className="w-5 h-5 shrink-0" />{error}</div>}
                 {error && <div className="mb-6 p-4 bg-red-50 text-red-600 border border-red-100 rounded-xl font-semibold text-sm flex items-center gap-3"><AlertCircle className="w-5 h-5 shrink-0" />{error}</div>}
+                {error && <div className="mb-6 p-4 bg-red-50 text-red-600 border border-red-100 rounded-xl font-semibold text-sm flex items-center gap-3"><AlertCircle className="w-5 h-5 shrink-0" />{error}</div>}
                 {success && <div className="mb-6 p-4 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl font-semibold text-sm flex items-center gap-3"><CheckCircle2 className="w-5 h-5 shrink-0" />Tower added successfully!</div>}
 
                 {!success && (
@@ -1183,6 +1193,10 @@ export default function BuilderDashboard() {
                         <input type="number" name="totalFloors" required min="1" value={towerData.totalFloors} onChange={handleTowerChange} placeholder="e.g. 15" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
                       </div>
                     )}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">BHK</label>
+                      <input type="text" name="bhk" value={towerData.bhk} onChange={handleTowerChange} placeholder="e.g. 2BHK, 3BHK" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
+                    </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-500 mb-3 uppercase tracking-widest">Number Series</label>
                       <div className="flex flex-wrap gap-4">
@@ -1228,6 +1242,7 @@ export default function BuilderDashboard() {
               </div>
 
               <div className="p-8 overflow-y-auto bg-white">
+                {error && <div className="mb-6 p-4 bg-red-50 text-red-600 border border-red-100 rounded-xl font-semibold text-sm flex items-center gap-3"><AlertCircle className="w-5 h-5 shrink-0" />{error}</div>}
                 {error && <div className="mb-6 p-4 bg-red-50 text-red-600 border border-red-100 rounded-xl font-semibold text-sm flex items-center gap-3"><AlertCircle className="w-5 h-5 shrink-0" />{error}</div>}
                 {success && <div className="mb-6 p-4 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl font-semibold text-sm flex items-center gap-3"><CheckCircle2 className="w-5 h-5 shrink-0" />Announcement posted successfully!</div>}
 
@@ -1335,6 +1350,7 @@ export default function BuilderDashboard() {
               </div>
 
               <div className="p-8 overflow-y-auto bg-white">
+                {error && <div className="mb-6 p-4 bg-red-50 text-red-600 border border-red-100 rounded-xl font-semibold text-sm flex items-center gap-3"><AlertCircle className="w-5 h-5 shrink-0" />{error}</div>}
                 {error && <div className="mb-6 p-4 bg-red-50 text-red-600 border border-red-100 rounded-xl font-semibold text-sm flex items-center gap-3"><AlertCircle className="w-5 h-5 shrink-0" />{error}</div>}
                 {success && <div className="mb-6 p-4 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl font-semibold text-sm flex items-center gap-3"><CheckCircle2 className="w-5 h-5 shrink-0" />Customer added successfully!</div>}
 
@@ -1510,6 +1526,7 @@ export default function BuilderDashboard() {
 
               <div className="p-8 overflow-y-auto bg-white">
                 {error && <div className="mb-6 p-4 bg-red-50 text-red-600 border border-red-100 rounded-xl font-semibold text-sm flex items-center gap-3"><AlertCircle className="w-5 h-5 shrink-0" />{error}</div>}
+                {error && <div className="mb-6 p-4 bg-red-50 text-red-600 border border-red-100 rounded-xl font-semibold text-sm flex items-center gap-3"><AlertCircle className="w-5 h-5 shrink-0" />{error}</div>}
                 {success && <div className="mb-6 p-4 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl font-semibold text-sm flex items-center gap-3"><CheckCircle2 className="w-5 h-5 shrink-0" />Project added successfully!</div>}
 
                 {!success && (
@@ -1540,13 +1557,26 @@ export default function BuilderDashboard() {
                         <input type="text" name="projectName" required value={projectData.projectName} onChange={handleProjectChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. Skyline Towers" />
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">BHK</label>
-                        <input type="text" name="bhk" value={projectData.bhk} onChange={handleProjectChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. 2BHK, 3BHK" />
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-bold text-slate-500 mb-3 uppercase tracking-widest">Status *</label>
+                        <div className="flex flex-wrap gap-4">
+                          {['Planning', 'Under Construction', 'Completed'].map((status) => (
+                            <label key={status} className={`flex items-center gap-2 px-4 py-3 border rounded-xl cursor-pointer transition-all ${projectData.status === status ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}`}>
+                              <input type="radio" name="status" value={status} checked={projectData.status === status} onChange={handleProjectChange} className="w-4 h-4 text-blue-600 focus:ring-blue-500" required />
+                              <span className="font-semibold">{status}</span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
+
+                      
                       <div>
                         <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Area (sqft)</label>
                         <input type="text" name="areaSqft" value={projectData.areaSqft} onChange={handleProjectChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. 1500" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Expected Possession</label>
+                        <input type="date" name="expectedPossession" value={projectData.expectedPossession} onChange={handleProjectChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
                       </div>
 
                       <div className="sm:col-span-2">
@@ -1557,29 +1587,10 @@ export default function BuilderDashboard() {
                         <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Location</label>
                         <input type="text" name="location" value={projectData.location} onChange={handleProjectChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. Downtown Metro" />
                       </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Status</label>
-                        <div className="relative">
-                          <select
-                            name="status" value={projectData.status} onChange={handleProjectChange}
-                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
-                          >
-                            <option value="" className="text-slate-400">-- Select Status --</option>
-                            <option value="Planning" className="text-slate-900">Planning</option>
-                            <option value="Under Construction" className="text-slate-900">Under Construction</option>
-                            <option value="Completed" className="text-slate-900">Completed</option>
-                          </select>
-                          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                            <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
-                          </div>
-                        </div>
-                      </div>
 
 
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Expected Possession</label>
-                        <input type="date" name="expectedPossession" value={projectData.expectedPossession} onChange={handleProjectChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
-                      </div>
+
+
 
                       <div className="sm:col-span-2">
                         <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Cover Image</label>
@@ -1650,6 +1661,7 @@ export default function BuilderDashboard() {
 
               <div className="p-8 overflow-y-auto bg-white">
                 {error && <div className="mb-6 p-4 bg-red-50 text-red-600 border border-red-100 rounded-xl font-semibold text-sm flex items-center gap-3"><AlertCircle className="w-5 h-5 shrink-0" />{error}</div>}
+                {error && <div className="mb-6 p-4 bg-red-50 text-red-600 border border-red-100 rounded-xl font-semibold text-sm flex items-center gap-3"><AlertCircle className="w-5 h-5 shrink-0" />{error}</div>}
                 {success && <div className="mb-6 p-4 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl font-semibold text-sm flex items-center gap-3"><CheckCircle2 className="w-5 h-5 shrink-0" />Tower added successfully!</div>}
 
                 {!success && (
@@ -1669,6 +1681,10 @@ export default function BuilderDashboard() {
                         <input type="number" name="totalFloors" required min="1" value={towerData.totalFloors} onChange={handleTowerChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. 15" />
                       </div>
                     )}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">BHK</label>
+                      <input type="text" name="bhk" value={towerData.bhk} onChange={handleTowerChange} placeholder="e.g. 2BHK, 3BHK" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
+                    </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-500 mb-3 uppercase tracking-widest">Number Series</label>
                       <div className="flex flex-wrap gap-4">
