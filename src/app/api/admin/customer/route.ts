@@ -36,63 +36,27 @@ export async function POST(request: Request) {
       tableName = await getCustomerTableNameByProjectId(supabaseAdmin, projectId);
     }
 
-    if (tableName === 'flate_customer' && projectId && towerName && flatNumber) {
-      const { data: towerData } = await supabaseAdmin
-        .from('flate_tower')
-        .select('number_series')
-        .eq('project_id', projectId)
-        .eq('tower_name', towerName)
-        .single();
-      
-      if (towerData && towerData.number_series) {
-        const numMatch = flatNumber.match(/\d+/);
-        const num = numMatch ? parseInt(numMatch[0], 10) : NaN;
-        
-        if (!isNaN(num)) {
-          let isValid = false;
-          const ranges = towerData.number_series.split(',').map((s: string) => s.trim());
-          for (const range of ranges) {
-            if (range.includes('-')) {
-              const parts = range.split('-');
-              const start = parseInt(parts[0], 10);
-              const end = parseInt(parts[1], 10);
-              if (!isNaN(start) && !isNaN(end) && num >= start && num <= end) {
-                isValid = true;
-                break;
-              }
-            } else {
-              const val = parseInt(range, 10);
-              if (!isNaN(val) && num === val) {
-                isValid = true;
-                break;
-              }
-            }
-          }
-          if (!isValid) {
-            return NextResponse.json({ error: `Flat number ${flatNumber} is outside the allowed number series (${towerData.number_series}) for tower ${towerName}.` }, { status: 400 });
-          }
-        }
-      }
+    const payload: any = {
+      builder_id: builderId || null,
+      project_id: projectId || null,
+      first_name: firstName,
+      last_name: lastName,
+      email: email,
+      phone: phone || null,
+      floor: floor || null,
+      tower_name: towerName || null,
+      flat_name: flatName || null,
+      flat_number: flatNumber || null,
+      area_sqft: areaSqft || null,
+    };
+
+    if (tableName === 'flate_customer') {
+      payload.bhk = bhk || null;
     }
 
     const { data, error } = await supabaseAdmin
       .from(tableName)
-      .insert([
-        {
-          builder_id: builderId || null,
-          project_id: projectId || null,
-          first_name: firstName,
-          last_name: lastName,
-          email: email,
-          phone: phone || null,
-          floor: floor || null,
-          tower_name: towerName || null,
-          flat_name: flatName || null,
-          flat_number: flatNumber || null,
-          area_sqft: areaSqft || null,
-          bhk: bhk || null,
-        }
-      ])
+      .insert([payload])
       .select();
 
     if (error) {

@@ -63,7 +63,7 @@ export async function GET(request: Request) {
     );
 
     const [flats, societies, commercials] = await Promise.all([
-      supabaseAdmin.from('flate_project').select('id, project_name, location, status, description, cover_img_url, expected_possession, customer_id, project_type, created_at'),
+      supabaseAdmin.from('flate_project').select('id, project_name, location, status, description, cover_img_url, expected_possession, customer_id, project_type, created_at, bhk, area_sqft'),
       supabaseAdmin.from('society_project').select('id, project_name, location, status, description, cover_img_url, expected_possession, customer_id, project_type, created_at'),
       supabaseAdmin.from('commercial_project').select('id, project_name, location, status, description, cover_img_url, expected_possession, customer_id, project_type, created_at')
     ]);

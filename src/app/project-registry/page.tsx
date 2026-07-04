@@ -8,22 +8,23 @@ import TowerProgress from '@/components/TowerProgress';
 
 export default function BuilderDashboard() {
   const [activeTab, setActiveTab] = useState<'builder' | 'customer' | 'project'>('project');
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
-  
+
   // Lists for tables
   const [builders, setBuilders] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [towers, setTowers] = useState<any[]>([]);
-  
+
   // Project Filters
   const [projectTypeFilter, setProjectTypeFilter] = useState('All');
   const [projectNameSearch, setProjectNameSearch] = useState('');
   const [customerTypeFilter, setCustomerTypeFilter] = useState('All');
+  const [customerProjectFilter, setCustomerProjectFilter] = useState('All');
 
   // Show form toggles (now used for Modals)
   const [showBuilderForm, setShowBuilderForm] = useState(false);
@@ -34,10 +35,10 @@ export default function BuilderDashboard() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [staffList, setStaffList] = useState<any[]>([]);
   const [announcementData, setAnnouncementData] = useState({ projectId: '', title: '', message: '' });
-  
+
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<any>(null);
   const [showAnnouncementDetailsModal, setShowAnnouncementDetailsModal] = useState(false);
-  
+
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [showCustomerDetailsModal, setShowCustomerDetailsModal] = useState(false);
   const [selectedProjectForSidebar, setSelectedProjectForSidebar] = useState<any>(null);
@@ -77,7 +78,7 @@ export default function BuilderDashboard() {
         }
       };
       fetchTowersForCustomer();
-      
+
       // Auto-populate BHK and Area from selected project
       const selectedProject = projects.find(p => p.id === customerData.projectId);
       if (selectedProject) {
@@ -123,9 +124,17 @@ export default function BuilderDashboard() {
       numbers = numbers.map(n => {
         let suffix = n;
         // Extract the unit number (suffix) from the base number
-        if (n.length === 3) suffix = n.slice(1);
-        else if (n.length === 4) suffix = n.slice(2);
-        else suffix = n.padStart(2, '0');
+        if (/^\d+$/.test(n)) {
+          if (n.length >= 3) {
+            if (n.startsWith('1')) {
+              suffix = n.substring(1);
+            } else {
+              suffix = n.slice(-2);
+            }
+          } else {
+            suffix = n.padStart(2, '0');
+          }
+        }
 
         if (floorStr === 'Ground') {
           return `G${suffix}`;
@@ -135,10 +144,18 @@ export default function BuilderDashboard() {
       });
       // Remove duplicates just in case mapping creates overlaps
       numbers = Array.from(new Set(numbers));
+
+      // Remove flats that are already booked by other customers
+      if (customerData.projectId) {
+        const bookedFlats = customers
+          .filter(c => c.project_id === customerData.projectId && c.tower_name === customerData.towerName && c.floor === customerData.floor)
+          .map(c => c.flat_number);
+        numbers = numbers.filter(n => !bookedFlats.includes(n));
+      }
     }
 
     return numbers;
-  }, [customerData.towerName, customerData.floor, projectTowers]);
+  }, [customerData.towerName, customerData.floor, customerData.projectId, projectTowers, customers]);
 
   const availableFloors = useMemo(() => {
     if (!customerData.towerName) return [];
@@ -173,7 +190,7 @@ export default function BuilderDashboard() {
       const pathname = window.location.pathname;
       const params = new URLSearchParams(window.location.search);
       const tab = params.get('tab');
-      
+
       if (pathname.includes('/customer-network') || tab === 'customer') {
         setActiveTab('customer');
       } else if (pathname.includes('/builder-network') || tab === 'builder') {
@@ -278,9 +295,9 @@ export default function BuilderDashboard() {
         body: formData,
       });
       const data = await response.json();
-      
+
       if (!response.ok) throw new Error(data.error || 'Failed to upload image');
-      
+
       setProjectData(prev => ({ ...prev, coverImgUrl: data.url }));
     } catch (err: any) {
       setError(err.message);
@@ -315,7 +332,7 @@ export default function BuilderDashboard() {
 
   const handleCustomerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     setIsSubmitting(true); setError(''); setSuccess(false);
 
     try {
@@ -328,7 +345,7 @@ export default function BuilderDashboard() {
       if (!response.ok) throw new Error(data.error || 'Failed to add customer');
 
       setSuccess(true);
-      setCustomerData({ builderId: '', customerType: '', projectId: '', firstName: '', lastName: '', email: '', phone: '', floor: '', towerName: '', flatName: '', flatNumber: '', areaSqft: '' });
+      setCustomerData({ builderId: '', customerType: '', projectId: '', firstName: '', lastName: '', email: '', phone: '', floor: '', towerName: '', flatName: '', flatNumber: '', areaSqft: '', bhk: '' });
       fetchCustomers();
       setTimeout(() => { setSuccess(false); setShowCustomerForm(false); }, 2000);
     } catch (err: any) {
@@ -352,7 +369,7 @@ export default function BuilderDashboard() {
       if (!response.ok) throw new Error(data.error || 'Failed to add project');
 
       setSuccess(true);
-      setProjectData({ projectName: '', location: '', status: '', description: '', coverImgUrl: '', expectedPossession: '', customerId: '', projectType: '' });
+      setProjectData({ projectName: '', location: '', status: '', description: '', coverImgUrl: '', expectedPossession: '', customerId: '', projectType: '', bhk: '', areaSqft: '' });
       fetchProjects();
       setTimeout(() => { setSuccess(false); setShowProjectForm(false); }, 2000);
     } catch (err: any) {
@@ -388,7 +405,7 @@ export default function BuilderDashboard() {
 
       setSuccess(true);
       fetchTowers(selectedProjectForSidebar?.id || selectedProjectForSidebar?._id);
-      
+
       setTimeout(() => {
         setSuccess(false);
         setShowTowerForm(false);
@@ -425,7 +442,7 @@ export default function BuilderDashboard() {
 
       setSuccess(true);
       fetchAnnouncements(selectedProjectForSidebar?.id || selectedProjectForSidebar?._id);
-      
+
       setTimeout(() => {
         setSuccess(false);
         setShowAnnouncementForm(false);
@@ -451,17 +468,17 @@ export default function BuilderDashboard() {
     setShowCustomerForm(false);
     setShowProjectForm(false);
     setActiveProjectSubTab(null);
-    
+
     // Sync with URL
-    const newPath = tabId === 'customer' ? '/customer-network' 
-                  : tabId === 'builder' ? '/project-registry/builder-network' 
-                  : '/project-registry';
+    const newPath = tabId === 'customer' ? '/customer-network'
+      : tabId === 'builder' ? '/project-registry/builder-network'
+        : '/project-registry';
     window.history.pushState(null, '', newPath);
   };
 
   return (
     <div className="h-screen w-full bg-[#f4f7f9] flex flex-col text-slate-800 overflow-hidden font-sans selection:bg-blue-500/20">
-      
+
       {/* Dynamic Background Effects */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-blue-400/10 blur-[120px]" />
@@ -489,50 +506,49 @@ export default function BuilderDashboard() {
 
       {/* Main Layout */}
       <div className="flex flex-1 overflow-hidden relative z-10">
-        
+
         {/* Glassmorphic Sidebar */}
         <aside className="w-80 bg-white/50 backdrop-blur-md border-r border-slate-200/60 p-6 shrink-0 flex flex-col gap-2 relative overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-2 mb-4">
             <Sparkles className="w-4 h-4 text-blue-500" />
             <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Management</span>
           </div>
-          
+
           <div className="flex flex-col gap-3">
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
-              
+
               return (
                 <div key={item.id} className="flex flex-col">
-                  <button 
+                  <button
                     onClick={() => handleTabChange(item.id)}
-                    className={`group relative flex items-center justify-between w-full px-4 py-4 rounded-2xl font-semibold transition-all duration-300 overflow-hidden ${
-                      isActive 
-                        ? 'text-blue-700 shadow-[0_0_20px_rgba(59,130,246,0.1)] border-blue-200/50' 
-                        : 'text-slate-600 hover:text-slate-900 border-transparent hover:bg-slate-200/40'
-                    } border`}
+                    className={`group relative flex items-center justify-between w-full px-4 py-4 rounded-2xl font-semibold transition-all duration-300 overflow-hidden ${isActive
+                      ? 'text-blue-700 shadow-[0_0_20px_rgba(59,130,246,0.1)] border-blue-200/50'
+                      : 'text-slate-600 hover:text-slate-900 border-transparent hover:bg-slate-200/40'
+                      } border`}
                   >
                     {/* Active Background Glow */}
                     {isActive && (
                       <motion.div layoutId="activeTab" className="absolute inset-0 bg-gradient-to-r from-blue-50 to-violet-50 rounded-2xl" />
                     )}
-                    
+
                     <div className="relative z-10 flex items-center gap-4 whitespace-nowrap">
                       <div className={`p-2 rounded-xl transition-colors duration-300 ${isActive ? 'bg-blue-100/50 text-blue-600' : 'bg-slate-100 group-hover:bg-slate-200'}`}>
                         <Icon className="w-5 h-5" />
                       </div>
                       <span className="truncate">{item.label}</span>
                     </div>
-                    
+
                     {isActive && <ChevronRight className={`w-4 h-4 text-blue-600 relative z-10 transition-transform duration-300 ${item.id === 'project' && selectedProjectForSidebar ? 'rotate-90' : ''}`} />}
                   </button>
-                  
+
                   {/* Collapsible Sub-menu for Project Registry */}
                   <AnimatePresence>
                     {item.id === 'project' && selectedProjectForSidebar && activeTab === 'project' && (
-                      <motion.div 
-                        initial={{ height: 0, opacity: 0 }} 
-                        animate={{ height: 'auto', opacity: 1 }} 
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         className="overflow-hidden flex flex-col mt-3 pl-3 pr-2"
                       >
@@ -545,7 +561,7 @@ export default function BuilderDashboard() {
                             <X className="w-3.5 h-3.5" />
                           </button>
                         </div>
-                        
+
                         <div className="flex flex-col gap-1 relative before:absolute before:left-[22px] before:top-2 before:bottom-4 before:w-[1.5px] before:bg-slate-100/80 before:rounded-full">
                           <button onClick={() => { setActiveProjectSubTab('progress'); setSelectedTowerForProgress(null); }} className={`w-full flex items-center gap-4 px-4 py-3 relative z-10 group transition-all rounded-xl ${activeProjectSubTab === 'progress' ? 'bg-blue-50/50' : ''}`}>
                             <div className="bg-[#f4f7f9] z-10 relative"><TrendingUp className={`w-[18px] h-[18px] transition-colors ${activeProjectSubTab === 'progress' ? 'text-blue-600' : 'text-slate-500 group-hover:text-blue-500'}`} /></div>
@@ -572,418 +588,428 @@ export default function BuilderDashboard() {
 
         {/* Content Area */}
         <main className="flex-1 overflow-y-auto p-8 lg:p-12 relative">
-           <div className="w-full max-w-none">
-              
-              {activeProjectSubTab && selectedProjectForSidebar ? (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6 mt-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <button onClick={() => { 
-                        if (selectedTowerForProgress) {
-                          setSelectedTowerForProgress(null);
-                        } else {
-                          setActiveProjectSubTab(null); 
-                        }
-                      }} className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-slate-700 shadow-sm transition-colors">
-                        <ChevronRight className="w-5 h-5 rotate-180" />
-                      </button>
-                      <div>
-                        <h2 className="text-2xl font-extrabold text-slate-900 capitalize flex items-center gap-2">
-                          {activeProjectSubTab === 'announcement' ? 'Announcements' : selectedProjectForSidebar.project_name}
-                        </h2>
-                        <p className="text-sm font-medium text-slate-500 mt-1">
-                          {activeProjectSubTab === 'announcement' ? 'View announcements for this project' : (
-                            <>Location: <span className="font-semibold text-slate-700">{selectedProjectForSidebar.location || 'N/A'}</span></>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                      
-                    {activeProjectSubTab === 'progress' && selectedProjectForSidebar && (
-                      <button onClick={() => setShowTowerForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2 shrink-0">
-                        <Plus className="w-4 h-4" /> {selectedProjectForSidebar?.project_type === 'Society' ? 'Add Section' : 'Add Tower'}
-                      </button>
-                    )}
-                    {activeProjectSubTab === 'announcement' && (
-                      <button onClick={() => setShowAnnouncementForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2 shrink-0">
-                        <Plus className="w-4 h-4" /> Add Announcement
-                      </button>
-                    )}
-                  </div>
+          <div className="w-full max-w-none">
 
-                  {activeProjectSubTab === 'progress' && selectedTowerForProgress ? (
-                    <TowerProgress 
-                      towerId={selectedTowerForProgress.id} 
-                      towerName={selectedTowerForProgress.tower_name} 
-                      onBack={() => setSelectedTowerForProgress(null)} 
-                    />
-                  ) : activeProjectSubTab === 'progress' && towers.length > 0 ? (
-                    <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {towers.map(tower => (
-                        <div key={tower.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow group flex flex-col justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                              <Building className="w-6 h-6" />
-                            </div>
-                            <div>
-                              <h3 className="text-xl font-bold text-slate-900 mb-0.5">{tower.tower_name}</h3>
-                              <p className="text-sm font-semibold text-slate-500">{tower.total_floors} Floors</p>
-                            </div>
-                          </div>
-                          <button onClick={() => setSelectedTowerForProgress(tower)} className="mt-6 w-full block text-center py-2.5 bg-slate-50 text-slate-700 font-bold rounded-xl hover:bg-slate-100 transition-colors text-sm">
-                            Manage Progress
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : activeProjectSubTab === 'announcement' && announcements.length > 0 ? (
-                    <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {announcements.map((ann) => (
-                        <div key={ann.id} onClick={() => { setSelectedAnnouncement(ann); setShowAnnouncementDetailsModal(true); }} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group flex flex-col justify-between cursor-pointer hover:border-indigo-300">
-                          <div>
-                            <div className="flex justify-between items-start mb-4">
-                              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 text-[11px] font-bold uppercase tracking-wider rounded-xl">
-                                <Megaphone className="w-3.5 h-3.5" />
-                                {projects.find(p => p.id === ann.project_id)?.project_name || selectedProjectForSidebar?.project_name || 'Unknown Project'}
-                              </div>
-                              <span className="text-xs font-bold text-slate-400 mt-1">{ann.created_at ? new Date(ann.created_at).toLocaleDateString() : ann.date}</span>
-                            </div>
-                            <h3 className="text-lg font-bold text-slate-900 mb-2">{ann.title}</h3>
-                            <p className="text-sm font-medium text-slate-600 line-clamp-3">{ann.message}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : activeProjectSubTab === 'staff' && staffList.length > 0 ? (
-                    <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {staffList.map((staff) => (
-                        <div key={staff.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group flex flex-col justify-between cursor-default">
-                          <div>
-                            <div className="flex justify-between items-start mb-4">
-                              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 text-[11px] font-bold uppercase tracking-wider rounded-xl">
-                                <Briefcase className="w-3.5 h-3.5" />
-                                {staff.role}
-                              </div>
-                              <span className="text-xs font-bold text-slate-400 mt-1">{staff.created_at ? new Date(staff.created_at).toLocaleDateString() : 'N/A'}</span>
-                            </div>
-                            <h3 className="text-lg font-bold text-slate-900 mb-2">{staff.name}</h3>
-                            <div className="space-y-1.5 mt-4">
-                              {staff.phone && <p className="text-sm font-medium text-slate-600 flex items-center gap-2">📞 {staff.phone}</p>}
-                              {staff.email && <p className="text-sm font-medium text-slate-600 flex items-center gap-2">✉️ {staff.email}</p>}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="mt-8 flex items-center justify-center min-h-[400px]">
-                      <p className="text-center text-slate-400/80 font-medium text-lg tracking-wide">
-                        {activeProjectSubTab === 'announcement' 
-                          ? 'No announcement records found for this project.'
-                          : activeProjectSubTab === 'staff'
-                          ? 'No staff members assigned to this project yet.'
-                          : `No ${activeProjectSubTab} records found for this project.`}
+            {activeProjectSubTab && selectedProjectForSidebar ? (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6 mt-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <button onClick={() => {
+                      if (selectedTowerForProgress) {
+                        setSelectedTowerForProgress(null);
+                      } else {
+                        setActiveProjectSubTab(null);
+                      }
+                    }} className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-slate-700 shadow-sm transition-colors">
+                      <ChevronRight className="w-5 h-5 rotate-180" />
+                    </button>
+                    <div>
+                      <h2 className="text-2xl font-extrabold text-slate-900 capitalize flex items-center gap-2">
+                        {activeProjectSubTab === 'announcement' ? 'Announcements' : selectedProjectForSidebar.project_name}
+                      </h2>
+                      <p className="text-sm font-medium text-slate-500 mt-1">
+                        {activeProjectSubTab === 'announcement' ? 'View announcements for this project' : (
+                          <>Location: <span className="font-semibold text-slate-700">{selectedProjectForSidebar.location || 'N/A'}</span></>
+                        )}
                       </p>
                     </div>
+                  </div>
+
+                  {activeProjectSubTab === 'progress' && selectedProjectForSidebar && (
+                    <button onClick={() => setShowTowerForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2 shrink-0">
+                      <Plus className="w-4 h-4" /> {selectedProjectForSidebar?.project_type === 'Society' ? 'Add Section' : 'Add Tower'}
+                    </button>
                   )}
-                </motion.div>
-              ) : (
-                <>
-                  {/* Header */}
-              <motion.div 
-                key={`header-${activeTab}`}
-                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
-                className="mb-12"
-              >
-                <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 mb-3 flex items-center gap-3">
-                  {activeTab === 'builder' ? 'Builder Matrix' : activeTab === 'customer' ? 'Customer Network' : 'Project Registry'}
-                  <div className="h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]" />
-                </h1>
-                <p className="text-sm font-medium text-slate-500 mt-2">
-                    {activeTab === 'builder' 
-                    ? 'Deploy new construction companies to the SuperAdmin ecosystem.' 
-                    : activeTab === 'customer' 
-                      ? 'Integrate new buyers and assign them directly to active builders.'
-                      : 'Initialize new real estate projects for the global tracker.'}
-                </p>
-              </motion.div>
-
-              {/* Form or List Card */}
-              <motion.div 
-                key={`form-${activeTab}`}
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: 'easeOut' }}
-                className="bg-white/80 backdrop-blur-2xl rounded-3xl border border-slate-200/80 shadow-[0_20px_60px_rgba(0,0,0,0.05)] overflow-hidden relative group"
-              >
-                
-                <div className="px-8 py-6 border-b border-slate-100 bg-white/50 flex items-center justify-between relative z-10">
-                   <div className="flex items-center gap-4">
-                     <div className="p-2.5 bg-gradient-to-br from-blue-50 to-violet-50 text-blue-600 rounded-xl border border-blue-100">
-                       <List className="w-5 h-5" />
-                     </div>
-                     <h2 className="font-bold text-xl text-slate-800">
-                       {activeTab === 'builder' ? 'Active Builders' : activeTab === 'customer' ? 'Active Customers' : 'Active Projects'}
-                     </h2>
-                   </div>
-                   
-                   {/* Add Button Toggles Modal */}
-                   {activeTab === 'customer' && (
-                     <button onClick={() => setShowCustomerForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2">
-                       <Plus className="w-4 h-4" /> Add Customer
-                     </button>
-                   )}
-                   {activeTab === 'project' && (
-                     <button onClick={() => setShowProjectForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2">
-                       <Plus className="w-4 h-4" /> Add Project
-                     </button>
-                   )}
-
-
+                  {activeProjectSubTab === 'announcement' && (
+                    <button onClick={() => setShowAnnouncementForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2 shrink-0">
+                      <Plus className="w-4 h-4" /> Add Announcement
+                    </button>
+                  )}
                 </div>
 
-                <div className="p-8 sm:p-12 relative z-10">
-                  
-                  {/* BUILDER LIST VIEW */}
-                  {activeTab === 'builder' && (
-                    <div className="overflow-x-auto -mx-4 sm:-mx-0">
-                      <table className="w-full text-left border-collapse min-w-[600px]">
-                        <thead>
-                          <tr className="border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
-                            <th className="pb-4 px-4">Company Name</th>
-                            <th className="pb-4 px-4">Contact</th>
-                            <th className="pb-4 px-4">Email</th>
-                            <th className="pb-4 px-4">Mobile No</th>
-                          </tr>
-                        </thead>
-                        <tbody className="text-slate-700">
-                          {builders.length === 0 ? (
-                            <tr>
-                              <td colSpan={4} className="py-12 text-center text-slate-500 font-medium">
-                                No builders deployed yet. Click 'Add Builder' to initialize one.
-                              </td>
-                            </tr>
-                          ) : (
-                            builders.map((builder) => (
-                              <tr key={builder.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group">
-                                <td className="py-5 px-4 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{builder.company_name}</td>
-                                <td className="py-5 px-4 text-slate-600 font-medium">{builder.contact_name}</td>
-                                <td className="py-5 px-4 text-slate-600 font-medium">{builder.email}</td>
-                                <td className="py-5 px-4 text-slate-600 font-medium">{builder.phone || 'N/A'}</td>
-                              </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+                {activeProjectSubTab === 'progress' && selectedTowerForProgress ? (
+                  <TowerProgress
+                    towerId={selectedTowerForProgress.id}
+                    towerName={selectedTowerForProgress.tower_name}
+                    onBack={() => setSelectedTowerForProgress(null)}
+                  />
+                ) : activeProjectSubTab === 'progress' && towers.length > 0 ? (
+                  <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {towers.map(tower => (
+                      <div key={tower.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow group flex flex-col justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                            <Building className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-bold text-slate-900 mb-0.5">{tower.tower_name}</h3>
+                            <p className="text-sm font-semibold text-slate-500">{tower.total_floors} Floors</p>
+                          </div>
+                        </div>
+                        <button onClick={() => setSelectedTowerForProgress(tower)} className="mt-6 w-full block text-center py-2.5 bg-slate-50 text-slate-700 font-bold rounded-xl hover:bg-slate-100 transition-colors text-sm">
+                          Manage Progress
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : activeProjectSubTab === 'announcement' && announcements.length > 0 ? (
+                  <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {announcements.map((ann) => (
+                      <div key={ann.id} onClick={() => { setSelectedAnnouncement(ann); setShowAnnouncementDetailsModal(true); }} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group flex flex-col justify-between cursor-pointer hover:border-indigo-300">
+                        <div>
+                          <div className="flex justify-between items-start mb-4">
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 text-[11px] font-bold uppercase tracking-wider rounded-xl">
+                              <Megaphone className="w-3.5 h-3.5" />
+                              {projects.find(p => p.id === ann.project_id)?.project_name || selectedProjectForSidebar?.project_name || 'Unknown Project'}
+                            </div>
+                            <span className="text-xs font-bold text-slate-400 mt-1">{ann.created_at ? new Date(ann.created_at).toLocaleDateString() : ann.date}</span>
+                          </div>
+                          <h3 className="text-lg font-bold text-slate-900 mb-2">{ann.title}</h3>
+                          <p className="text-sm font-medium text-slate-600 line-clamp-3">{ann.message}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : activeProjectSubTab === 'staff' && staffList.length > 0 ? (
+                  <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {staffList.map((staff) => (
+                      <div key={staff.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group flex flex-col justify-between cursor-default">
+                        <div>
+                          <div className="flex justify-between items-start mb-4">
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 text-[11px] font-bold uppercase tracking-wider rounded-xl">
+                              <Briefcase className="w-3.5 h-3.5" />
+                              {staff.role}
+                            </div>
+                            <span className="text-xs font-bold text-slate-400 mt-1">{staff.created_at ? new Date(staff.created_at).toLocaleDateString() : 'N/A'}</span>
+                          </div>
+                          <h3 className="text-lg font-bold text-slate-900 mb-2">{staff.name}</h3>
+                          <div className="space-y-1.5 mt-4">
+                            {staff.phone && <p className="text-sm font-medium text-slate-600 flex items-center gap-2">📞 {staff.phone}</p>}
+                            {staff.email && <p className="text-sm font-medium text-slate-600 flex items-center gap-2">✉️ {staff.email}</p>}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-8 flex items-center justify-center min-h-[400px]">
+                    <p className="text-center text-slate-400/80 font-medium text-lg tracking-wide">
+                      {activeProjectSubTab === 'announcement'
+                        ? 'No announcement records found for this project.'
+                        : activeProjectSubTab === 'staff'
+                          ? 'No staff members assigned to this project yet.'
+                          : `No ${activeProjectSubTab} records found for this project.`}
+                    </p>
+                  </div>
+                )}
+              </motion.div>
+            ) : (
+              <>
+                {/* Header */}
+                <motion.div
+                  key={`header-${activeTab}`}
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
+                  className="mb-12"
+                >
+                  <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 mb-3 flex items-center gap-3">
+                    {activeTab === 'builder' ? 'Builder Matrix' : activeTab === 'customer' ? 'Customer Network' : 'Project Registry'}
+                    <div className="h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]" />
+                  </h1>
+                  <p className="text-sm font-medium text-slate-500 mt-2">
+                    {activeTab === 'builder'
+                      ? 'Deploy new construction companies to the SuperAdmin ecosystem.'
+                      : activeTab === 'customer'
+                        ? 'Integrate new buyers and assign them directly to active builders.'
+                        : 'Initialize new real estate projects for the global tracker.'}
+                  </p>
+                </motion.div>
 
-                  {/* CUSTOMER LIST VIEW */}
-                  {activeTab === 'customer' && (
-                    <div className="flex flex-col gap-6">
-                      <div className="flex flex-col sm:flex-row gap-4 items-center">
-                        <div className="w-full sm:w-64">
-                          <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Filter by Type</label>
-                          <div className="relative">
+                {/* Form or List Card */}
+                <motion.div
+                  key={`form-${activeTab}`}
+                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: 'easeOut' }}
+                  className="bg-white/80 backdrop-blur-2xl rounded-3xl border border-slate-200/80 shadow-[0_20px_60px_rgba(0,0,0,0.05)] overflow-hidden relative group"
+                >
+
+                  <div className="px-8 py-6 border-b border-slate-100 bg-white/50 flex items-center justify-between relative z-10">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2.5 bg-gradient-to-br from-blue-50 to-violet-50 text-blue-600 rounded-xl border border-blue-100">
+                        <List className="w-5 h-5" />
+                      </div>
+                      <h2 className="font-bold text-xl text-slate-800">
+                        {activeTab === 'builder' ? 'Active Builders' : activeTab === 'customer' ? 'Active Customers' : 'Active Projects'}
+                      </h2>
+                    </div>
+
+                    {/* Add Button Toggles Modal */}
+                    {activeTab === 'customer' && (
+                      <button onClick={() => setShowCustomerForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2">
+                        <Plus className="w-4 h-4" /> Add Customer
+                      </button>
+                    )}
+                    {activeTab === 'project' && (
+                      <button onClick={() => setShowProjectForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2">
+                        <Plus className="w-4 h-4" /> Add Project
+                      </button>
+                    )}
+
+
+                  </div>
+
+                  <div className="p-8 sm:p-12 relative z-10">
+
+                    {/* BUILDER LIST VIEW */}
+                    {activeTab === 'builder' && (
+                      <div className="overflow-x-auto -mx-4 sm:-mx-0">
+                        <table className="w-full text-left border-collapse min-w-[600px]">
+                          <thead>
+                            <tr className="border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
+                              <th className="pb-4 px-4">Company Name</th>
+                              <th className="pb-4 px-4">Contact</th>
+                              <th className="pb-4 px-4">Email</th>
+                              <th className="pb-4 px-4">Mobile No</th>
+                            </tr>
+                          </thead>
+                          <tbody className="text-slate-700">
+                            {builders.length === 0 ? (
+                              <tr>
+                                <td colSpan={4} className="py-12 text-center text-slate-500 font-medium">
+                                  No builders deployed yet. Click 'Add Builder' to initialize one.
+                                </td>
+                              </tr>
+                            ) : (
+                              builders.map((builder) => (
+                                <tr key={builder.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group">
+                                  <td className="py-5 px-4 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{builder.company_name}</td>
+                                  <td className="py-5 px-4 text-slate-600 font-medium">{builder.contact_name}</td>
+                                  <td className="py-5 px-4 text-slate-600 font-medium">{builder.email}</td>
+                                  <td className="py-5 px-4 text-slate-600 font-medium">{builder.phone || 'N/A'}</td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+
+                    {/* CUSTOMER LIST VIEW */}
+                    {activeTab === 'customer' && (
+                      <div className="flex flex-col gap-6">
+                        <div className="flex flex-col sm:flex-row gap-4 items-center">
+                          <div className="w-full sm:w-64">
+                            <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Filter by Type</label>
+                            <div className="relative">
+                              <select
+                                value={customerTypeFilter}
+                                onChange={(e) => setCustomerTypeFilter(e.target.value)}
+                                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
+                              >
+                                <option value="All">All Types</option>
+                                <option value="Flat">Flat</option>
+                                <option value="Commercial">Commercial</option>
+                                <option value="Society">Society</option>
+                              </select>
+                              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="w-full sm:w-64">
+                            <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Filter by Project</label>
+                            <div className="relative">
+                              <select
+                                value={customerProjectFilter}
+                                onChange={(e) => setCustomerProjectFilter(e.target.value)}
+                                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
+                              >
+                                <option value="All">All Projects</option>
+                                {projects.map(p => (
+                                  <option key={p.id} value={p.id}>{p.project_name}</option>
+                                ))}
+                              </select>
+                              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="overflow-x-auto -mx-4 sm:-mx-0 mt-6">
+                          <table className="w-full text-left border-collapse min-w-[800px]">
+                            <thead>
+                              <tr className="border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
+                                <th className="pb-4 px-4">Name</th>
+                                <th className="pb-4 px-4">Contact Details</th>
+                                <th className="pb-4 px-4">Tower / Flat</th>
+                                <th className="pb-4 px-4 text-right">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody className="text-slate-700">
+                              {customers
+                                .filter(c => customerTypeFilter === 'All' || c.customer_type === customerTypeFilter)
+                                .filter(c => customerProjectFilter === 'All' || c.project_id === customerProjectFilter)
+                                .length === 0 ? (
+                                <tr>
+                                  <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
+                                    No customers match the selected filters.
+                                  </td>
+                                </tr>
+                              ) : (
+                                customers
+                                  .filter(c => customerTypeFilter === 'All' || c.customer_type === customerTypeFilter)
+                                  .filter(c => customerProjectFilter === 'All' || c.project_id === customerProjectFilter)
+                                  .map((customer) => (
+                                    <tr key={customer.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group">
+                                      <td className="py-5 px-4 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                                        {customer.first_name} {customer.last_name}
+                                        {customer.customer_type && <div className="text-xs font-normal text-slate-500 mt-1">{customer.customer_type}</div>}
+                                      </td>
+                                      <td className="py-5 px-4 text-slate-600 font-medium">
+                                        <div>{customer.email}</div>
+                                        <div className="text-sm text-slate-500 mt-1">{customer.phone || 'N/A'}</div>
+                                      </td>
+                                      <td className="py-5 px-4 text-slate-600 font-medium">
+                                        {customer.tower_name ? (
+                                          <>
+                                            <div className="font-semibold text-slate-800">{customer.tower_name}</div>
+                                            <div className="text-sm text-slate-500 mt-1">Floor {customer.floor || '-'} | Flat {customer.flat_number || '-'}</div>
+                                            {(customer.bhk || customer.area_sqft) && (
+                                              <div className="text-xs text-slate-400 mt-1">
+                                                {customer.bhk && <span>{customer.bhk}</span>}
+                                                {customer.bhk && customer.area_sqft && <span> &bull; </span>}
+                                                {customer.area_sqft && <span>{customer.area_sqft} sqft</span>}
+                                              </div>
+                                            )}
+                                          </>
+                                        ) : (
+                                          <span className="text-slate-400 italic">Not Assigned</span>
+                                        )}
+                                      </td>
+                                      <td className="py-5 px-4 text-right">
+                                        <button
+                                          onClick={() => { setSelectedCustomer(customer); setShowCustomerDetailsModal(true); }}
+                                          className="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors"
+                                        >
+                                          View
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  ))
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                    {/* PROJECT LIST VIEW */}
+                    {activeTab === 'project' && !activeProjectSubTab && (
+                      <div className="flex flex-col gap-6">
+                        {/* Filters */}
+                        <div className="flex flex-col sm:flex-row items-center gap-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                          <div className="w-full sm:w-1/3">
+                            <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-widest">Filter by Type</label>
                             <select
-                              value={customerTypeFilter}
-                              onChange={(e) => setCustomerTypeFilter(e.target.value)}
-                              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
+                              value={projectTypeFilter}
+                              onChange={(e) => { setProjectTypeFilter(e.target.value); setProjectNameSearch(''); }}
+                              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm appearance-none cursor-pointer"
                             >
                               <option value="All">All Types</option>
                               <option value="Flat">Flat</option>
                               <option value="Commercial">Commercial</option>
                               <option value="Society">Society</option>
                             </select>
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                              <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
-                            </div>
+                          </div>
+                          <div className="w-full sm:w-2/3">
+                            <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-widest">Filter by Name</label>
+                            <select
+                              value={projectNameSearch}
+                              onChange={(e) => setProjectNameSearch(e.target.value)}
+                              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm appearance-none cursor-pointer"
+                            >
+                              <option value="">All Projects</option>
+                              {projects
+                                .filter(p => projectTypeFilter === 'All' || p.project_type === projectTypeFilter)
+                                .map((project) => (
+                                  <option key={project.id} value={project.project_name}>
+                                    {project.project_name}
+                                  </option>
+                                ))}
+                            </select>
                           </div>
                         </div>
-                      </div>
 
-                    <div className="overflow-x-auto -mx-4 sm:-mx-0 mt-6">
-                      <table className="w-full text-left border-collapse min-w-[800px]">
-                        <thead>
-                          <tr className="border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
-                            <th className="pb-4 px-4">Name</th>
-                            <th className="pb-4 px-4">Contact Details</th>
-                            <th className="pb-4 px-4">Builder Company</th>
-                            <th className="pb-4 px-4">Tower / Flat</th>
-                            <th className="pb-4 px-4 text-right">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody className="text-slate-700">
-                          {customers.filter(c => customerTypeFilter === 'All' || c.customer_type === customerTypeFilter).length === 0 ? (
-                            <tr>
-                              <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
-                                No customers match the selected filters.
-                              </td>
-                            </tr>
-                          ) : (
-                            customers
-                              .filter(c => customerTypeFilter === 'All' || c.customer_type === customerTypeFilter)
-                              .map((customer) => (
-                              <tr key={customer.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group">
-                                <td className="py-5 px-4 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                                  {customer.first_name} {customer.last_name}
-                                  <div className="text-xs font-normal text-slate-500 mt-1">{customer.customer_type || 'Unknown'}</div>
-                                </td>
-                                <td className="py-5 px-4 text-slate-600 font-medium">
-                                  <div>{customer.email}</div>
-                                  <div className="text-sm text-slate-500 mt-1">{customer.phone || 'N/A'}</div>
-                                </td>
-                                <td className="py-5 px-4 text-slate-600 font-medium">
-                                  {builders.find(b => b.id === customer.builder_id)?.company_name || 'N/A'}
-                                </td>
-                                <td className="py-5 px-4 text-slate-600 font-medium">
-                                  {customer.tower_name ? (
-                                    <>
-                                      <div className="font-semibold text-slate-800">{customer.tower_name}</div>
-                                      <div className="text-sm text-slate-500 mt-1">Floor {customer.floor || '-'} | Flat {customer.flat_number || '-'}</div>
-                                      {(customer.bhk || customer.area_sqft) && (
-                                        <div className="text-xs text-slate-400 mt-1">
-                                          {customer.bhk && <span>{customer.bhk}</span>}
-                                          {customer.bhk && customer.area_sqft && <span> &bull; </span>}
-                                          {customer.area_sqft && <span>{customer.area_sqft} sqft</span>}
-                                        </div>
-                                      )}
-                                    </>
-                                  ) : (
-                                    <span className="text-slate-400 italic">Not Assigned</span>
-                                  )}
-                                </td>
-                                <td className="py-5 px-4 text-right">
-                                  <button 
-                                    onClick={() => { setSelectedCustomer(customer); setShowCustomerDetailsModal(true); }}
-                                    className="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors"
-                                  >
-                                    View
-                                  </button>
-                                </td>
+                        <div className="overflow-x-auto -mx-4 sm:-mx-0">
+                          <table className="w-full text-left border-collapse min-w-[600px]">
+                            <thead>
+                              <tr className="border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
+                                <th className="pb-4 px-4">Project Name</th>
+                                <th className="pb-4 px-4">Location</th>
+                                <th className="pb-4 px-4">Expected Possession</th>
+                                <th className="pb-4 px-4 text-right">Status</th>
+                                <th className="pb-4 px-4 text-right">Actions</th>
                               </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                  )}
-                  {/* PROJECT LIST VIEW */}
-                  {activeTab === 'project' && !activeProjectSubTab && (
-                    <div className="flex flex-col gap-6">
-                      {/* Filters */}
-                      <div className="flex flex-col sm:flex-row items-center gap-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-                        <div className="w-full sm:w-1/3">
-                          <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-widest">Filter by Type</label>
-                          <select 
-                            value={projectTypeFilter}
-                            onChange={(e) => { setProjectTypeFilter(e.target.value); setProjectNameSearch(''); }}
-                            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm appearance-none cursor-pointer"
-                          >
-                            <option value="All">All Types</option>
-                            <option value="Flat">Flat</option>
-                            <option value="Commercial">Commercial</option>
-                            <option value="Society">Society</option>
-                          </select>
-                        </div>
-                        <div className="w-full sm:w-2/3">
-                          <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-widest">Filter by Name</label>
-                          <select 
-                            value={projectNameSearch}
-                            onChange={(e) => setProjectNameSearch(e.target.value)}
-                            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm appearance-none cursor-pointer"
-                          >
-                            <option value="">All Projects</option>
-                            {projects
-                              .filter(p => projectTypeFilter === 'All' || p.project_type === projectTypeFilter)
-                              .map((project) => (
-                                <option key={project.id} value={project.project_name}>
-                                  {project.project_name}
-                                </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="overflow-x-auto -mx-4 sm:-mx-0">
-                        <table className="w-full text-left border-collapse min-w-[600px]">
-                          <thead>
-                            <tr className="border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
-                              <th className="pb-4 px-4">Project Name</th>
-                              <th className="pb-4 px-4">Location</th>
-                              <th className="pb-4 px-4">Expected Possession</th>
-                              <th className="pb-4 px-4 text-right">Status</th>
-                              <th className="pb-4 px-4 text-right">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody className="text-slate-700">
-                            {projects
-                              .filter(p => projectTypeFilter === 'All' || p.project_type === projectTypeFilter)
-                              .filter(p => projectNameSearch === '' || p.project_name === projectNameSearch)
-                              .length === 0 ? (
-                              <tr>
-                                <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
-                                  No projects found matching the filters.
-                                </td>
-                              </tr>
-                            ) : (
-                              projects
+                            </thead>
+                            <tbody className="text-slate-700">
+                              {projects
                                 .filter(p => projectTypeFilter === 'All' || p.project_type === projectTypeFilter)
                                 .filter(p => projectNameSearch === '' || p.project_name === projectNameSearch)
-                                .map((project) => (
-                              <tr key={project.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group">
-                                <td className="py-5 px-4 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                                  {project.project_name}
-                                  {(project.bhk || project.area_sqft) && (
-                                    <div className="text-xs text-slate-500 font-medium mt-1">
-                                      {project.bhk && <span>{project.bhk}</span>}
-                                      {project.bhk && project.area_sqft && <span> &bull; </span>}
-                                      {project.area_sqft && <span>{project.area_sqft} sqft</span>}
-                                    </div>
-                                  )}
-                                </td>
-                                <td className="py-5 px-4 text-slate-600 font-medium">{project.location || 'N/A'}</td>
-                                <td className="py-5 px-4 text-slate-600 font-medium">{project.expected_possession || project.expectedPossession || 'N/A'}</td>
-                                <td className="py-5 px-4 text-right">
-                                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-extrabold tracking-wider border ${
-                                    project.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 
-                                    project.status === 'Under Construction' ? 'bg-amber-50 text-amber-600 border-amber-200' :
-                                    'bg-blue-50 text-blue-600 border-blue-200'
-                                  }`}>
-                                    {project.status || 'Planning'}
-                                  </span>
-                                </td>
-                                <td className="py-5 px-4 text-right">
-                                  <button 
-                                    onClick={() => { setSelectedProjectForSidebar(project); setActiveProjectSubTab('progress'); }}
-                                    className="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors"
-                                  >
-                                    View
-                                  </button>
-                                </td>
-                              </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
+                                .length === 0 ? (
+                                <tr>
+                                  <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
+                                    No projects found matching the filters.
+                                  </td>
+                                </tr>
+                              ) : (
+                                projects
+                                  .filter(p => projectTypeFilter === 'All' || p.project_type === projectTypeFilter)
+                                  .filter(p => projectNameSearch === '' || p.project_name === projectNameSearch)
+                                  .map((project) => (
+                                    <tr key={project.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group">
+                                      <td className="py-5 px-4 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                                        {project.project_name}
+                                      </td>
+                                      <td className="py-5 px-4 text-slate-600 font-medium">{project.location || 'N/A'}</td>
+                                      <td className="py-5 px-4 text-slate-600 font-medium">{project.expected_possession || project.expectedPossession || 'N/A'}</td>
+                                      <td className="py-5 px-4 text-right">
+                                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-extrabold tracking-wider border ${project.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                                          project.status === 'Under Construction' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                                            'bg-blue-50 text-blue-600 border-blue-200'
+                                          }`}>
+                                          {project.status || 'Planning'}
+                                        </span>
+                                      </td>
+                                      <td className="py-5 px-4 text-right">
+                                        <button
+                                          onClick={() => { setSelectedProjectForSidebar(project); setActiveProjectSubTab('progress'); }}
+                                          className="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors"
+                                        >
+                                          View
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  ))
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  )}
-                </div>
-              </motion.div>
+                </motion.div>
               </>
-              )}
-           </div>
+            )}
+          </div>
         </main>
       </div>
 
       {/* --- MODALS --- */}
       <AnimatePresence>
         {(showBuilderForm || showCustomerForm || showProjectForm) && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
             className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 sm:p-8"
           >
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 10 }} transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
               className="bg-white w-full max-w-3xl rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden flex flex-col max-h-full"
             >
@@ -997,7 +1023,7 @@ export default function BuilderDashboard() {
                     {showBuilderForm ? 'Initialize New Builder' : showCustomerForm ? 'Initialize New Customer' : 'Initialize New Project'}
                   </h2>
                 </div>
-                <button 
+                <button
                   onClick={() => { setShowBuilderForm(false); setShowCustomerForm(false); setShowProjectForm(false); setError(''); setSuccess(false); }}
                   className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition-colors"
                 >
@@ -1007,7 +1033,7 @@ export default function BuilderDashboard() {
 
               {/* Modal Body */}
               <div className="p-8 sm:p-10 overflow-y-auto">
-                
+
                 {/* Status Messages */}
                 <AnimatePresence>
                   {error && (
@@ -1072,10 +1098,12 @@ export default function BuilderDashboard() {
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Contact Number</p>
                     <p className="font-bold text-slate-900">{selectedCustomer.phone || 'N/A'}</p>
                   </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Builder Assigned</p>
-                    <p className="font-bold text-slate-900">{builders.find(b => b.id === selectedCustomer.builder_id)?.contact_name || 'N/A'} ({builders.find(b => b.id === selectedCustomer.builder_id)?.company_name || 'N/A'})</p>
-                  </div>
+                  {(selectedCustomer.builder_id) && (
+                    <div>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Builder Assigned</p>
+                      <p className="font-bold text-slate-900">{builders.find(b => b.id === selectedCustomer.builder_id)?.contact_name || 'N/A'} ({builders.find(b => b.id === selectedCustomer.builder_id)?.company_name || 'N/A'})</p>
+                    </div>
+                  )}
                   <div>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Floor</p>
                     <p className="font-bold text-slate-900">{selectedCustomer.floor || 'N/A'}</p>
@@ -1094,10 +1122,18 @@ export default function BuilderDashboard() {
                       <p className="font-bold text-slate-900">{selectedCustomer.flat_number || 'N/A'}</p>
                     </div>
                   )}
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Area (sqft)</p>
-                    <p className="font-bold text-slate-900">{selectedCustomer.area_sqft ? `${selectedCustomer.area_sqft} sqft` : 'N/A'}</p>
-                  </div>
+                  {(selectedCustomer.bhk || projects.find(p => p.id === selectedCustomer.project_id)?.bhk) && (
+                    <div>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Project BHK</p>
+                      <p className="font-bold text-slate-900">{selectedCustomer.bhk || projects.find(p => p.id === selectedCustomer.project_id)?.bhk}</p>
+                    </div>
+                  )}
+                  {(selectedCustomer.area_sqft || projects.find(p => p.id === selectedCustomer.project_id)?.area_sqft) && (
+                    <div>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Area (sqft)</p>
+                      <p className="font-bold text-slate-900">{selectedCustomer.area_sqft || projects.find(p => p.id === selectedCustomer.project_id)?.area_sqft} sqft</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -1127,8 +1163,9 @@ export default function BuilderDashboard() {
 
               <div className="p-8 overflow-y-auto bg-white">
                 {error && <div className="mb-6 p-4 bg-red-50 text-red-600 border border-red-100 rounded-xl font-semibold text-sm flex items-center gap-3"><AlertCircle className="w-5 h-5 shrink-0" />{error}</div>}
+                {error && <div className="mb-6 p-4 bg-red-50 text-red-600 border border-red-100 rounded-xl font-semibold text-sm flex items-center gap-3"><AlertCircle className="w-5 h-5 shrink-0" />{error}</div>}
                 {success && <div className="mb-6 p-4 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl font-semibold text-sm flex items-center gap-3"><CheckCircle2 className="w-5 h-5 shrink-0" />Tower added successfully!</div>}
-                
+
                 {!success && (
                   <form onSubmit={handleTowerSubmit} className="space-y-6">
                     <div>
@@ -1149,7 +1186,7 @@ export default function BuilderDashboard() {
                     <div>
                       <label className="block text-xs font-bold text-slate-500 mb-3 uppercase tracking-widest">Number Series</label>
                       <div className="flex flex-wrap gap-4">
-                        {['1-10', '101-110', '1001-1010'].map((series) => (
+                        {['1-4', '101-104', '1001-1004'].map((series) => (
                           <label key={series} className={`flex items-center gap-2 px-4 py-3 border rounded-xl cursor-pointer transition-all ${towerData.numberSeries === series ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}`}>
                             <input type="radio" name="numberSeries" value={series} checked={towerData.numberSeries === series} onChange={handleTowerChange} className="w-4 h-4 text-blue-600 focus:ring-blue-500" required />
                             <span className="font-semibold">{series}</span>
@@ -1191,14 +1228,15 @@ export default function BuilderDashboard() {
               </div>
 
               <div className="p-8 overflow-y-auto bg-white">
+                {error && <div className="mb-6 p-4 bg-red-50 text-red-600 border border-red-100 rounded-xl font-semibold text-sm flex items-center gap-3"><AlertCircle className="w-5 h-5 shrink-0" />{error}</div>}
                 {success && <div className="mb-6 p-4 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl font-semibold text-sm flex items-center gap-3"><CheckCircle2 className="w-5 h-5 shrink-0" />Announcement posted successfully!</div>}
-                
+
                 {!success && (
                   <form onSubmit={handleAnnouncementSubmit} className="space-y-6">
                     <div>
                       <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Project Name</label>
                       <div className="relative">
-                        <select 
+                        <select
                           name="projectId" required value={announcementData.projectId} onChange={handleAnnouncementChange}
                           className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
                         >
@@ -1236,11 +1274,11 @@ export default function BuilderDashboard() {
       {/* Announcement Details Modal */}
       <AnimatePresence>
         {showAnnouncementDetailsModal && selectedAnnouncement && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
             className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 sm:p-8"
           >
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 10 }} transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
               className="bg-white w-full max-w-lg rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden flex flex-col"
             >
@@ -1297,8 +1335,9 @@ export default function BuilderDashboard() {
               </div>
 
               <div className="p-8 overflow-y-auto bg-white">
+                {error && <div className="mb-6 p-4 bg-red-50 text-red-600 border border-red-100 rounded-xl font-semibold text-sm flex items-center gap-3"><AlertCircle className="w-5 h-5 shrink-0" />{error}</div>}
                 {success && <div className="mb-6 p-4 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl font-semibold text-sm flex items-center gap-3"><CheckCircle2 className="w-5 h-5 shrink-0" />Customer added successfully!</div>}
-                
+
                 {!success && (
                   <form onSubmit={handleCustomerSubmit} className="space-y-6">
                     <div className="grid sm:grid-cols-2 gap-6">
@@ -1306,7 +1345,7 @@ export default function BuilderDashboard() {
                       <div className="sm:col-span-2">
                         <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Customer Type *</label>
                         <div className="relative">
-                          <select 
+                          <select
                             name="customerType" required value={customerData.customerType} onChange={handleCustomerChange}
                             className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
                           >
@@ -1324,16 +1363,16 @@ export default function BuilderDashboard() {
                       <div className="sm:col-span-2">
                         <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Assign to Project (Optional)</label>
                         <div className="relative">
-                          <select 
-                            name="projectId" value={customerData.projectId || ''} onChange={(e) => setCustomerData(prev => ({...prev, projectId: e.target.value}))}
+                          <select
+                            name="projectId" value={customerData.projectId || ''} onChange={(e) => setCustomerData(prev => ({ ...prev, projectId: e.target.value }))}
                             className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
                           >
                             <option value="" className="text-slate-400">-- Select a Project --</option>
                             {projects
                               .filter(p => !customerData.customerType || p.project_type === customerData.customerType)
                               .map(p => (
-                              <option key={p.id} value={p.id} className="text-slate-900">{p.project_name}</option>
-                            ))}
+                                <option key={p.id} value={p.id} className="text-slate-900">{p.project_name}</option>
+                              ))}
                           </select>
                           <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                             <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
@@ -1366,10 +1405,10 @@ export default function BuilderDashboard() {
                           <div>
                             <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Tower Name</label>
                             <div className="relative">
-                              <select 
-                                name="towerName" 
-                                value={customerData.towerName} 
-                                onChange={handleCustomerChange} 
+                              <select
+                                name="towerName"
+                                value={customerData.towerName}
+                                onChange={handleCustomerChange}
                                 className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
                               >
                                 <option value="" className="text-slate-400">-- Select a Tower --</option>
@@ -1385,10 +1424,10 @@ export default function BuilderDashboard() {
                           <div>
                             <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Floor</label>
                             <div className="relative">
-                              <select 
-                                name="floor" 
-                                value={customerData.floor} 
-                                onChange={handleCustomerChange} 
+                              <select
+                                name="floor"
+                                value={customerData.floor}
+                                onChange={handleCustomerChange}
                                 className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
                               >
                                 <option value="" className="text-slate-400">-- Select a Floor --</option>
@@ -1404,10 +1443,10 @@ export default function BuilderDashboard() {
                           <div>
                             <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Flat Number</label>
                             <div className="relative">
-                              <select 
-                                name="flatNumber" 
-                                value={customerData.flatNumber} 
-                                onChange={handleCustomerChange} 
+                              <select
+                                name="flatNumber"
+                                value={customerData.flatNumber}
+                                onChange={handleCustomerChange}
                                 className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
                               >
                                 <option value="" className="text-slate-400">-- Select a Number --</option>
@@ -1470,18 +1509,37 @@ export default function BuilderDashboard() {
               </div>
 
               <div className="p-8 overflow-y-auto bg-white">
+                {error && <div className="mb-6 p-4 bg-red-50 text-red-600 border border-red-100 rounded-xl font-semibold text-sm flex items-center gap-3"><AlertCircle className="w-5 h-5 shrink-0" />{error}</div>}
                 {success && <div className="mb-6 p-4 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl font-semibold text-sm flex items-center gap-3"><CheckCircle2 className="w-5 h-5 shrink-0" />Project added successfully!</div>}
-                
+
                 {!success && (
                   <form onSubmit={handleProjectSubmit} className="space-y-6">
                     <div className="grid sm:grid-cols-2 gap-6">
 
 
                       <div className="sm:col-span-2">
+                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Project Type *</label>
+                        <div className="relative">
+                          <select
+                            name="projectType" required value={projectData.projectType} onChange={handleProjectChange}
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
+                          >
+                            <option value="" className="text-slate-400">-- Select Type --</option>
+                            <option value="Flat" className="text-slate-900">Flat</option>
+                            <option value="Society" className="text-slate-900">Society</option>
+                            <option value="Commercial" className="text-slate-900">Commercial</option>
+                          </select>
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="sm:col-span-2">
                         <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Project Name *</label>
                         <input type="text" name="projectName" required value={projectData.projectName} onChange={handleProjectChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. Skyline Towers" />
                       </div>
-                      
+
                       <div>
                         <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">BHK</label>
                         <input type="text" name="bhk" value={projectData.bhk} onChange={handleProjectChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. 2BHK, 3BHK" />
@@ -1490,7 +1548,7 @@ export default function BuilderDashboard() {
                         <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Area (sqft)</label>
                         <input type="text" name="areaSqft" value={projectData.areaSqft} onChange={handleProjectChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. 1500" />
                       </div>
-                      
+
                       <div className="sm:col-span-2">
                         <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Description</label>
                         <textarea name="description" value={projectData.description} onChange={handleProjectChange as any} rows={3} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm resize-none" placeholder="Brief description of the project..."></textarea>
@@ -1502,7 +1560,7 @@ export default function BuilderDashboard() {
                       <div>
                         <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Status</label>
                         <div className="relative">
-                          <select 
+                          <select
                             name="status" value={projectData.status} onChange={handleProjectChange}
                             className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
                           >
@@ -1522,23 +1580,7 @@ export default function BuilderDashboard() {
                         <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Expected Possession</label>
                         <input type="date" name="expectedPossession" value={projectData.expectedPossession} onChange={handleProjectChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
                       </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Project Type</label>
-                        <div className="relative">
-                          <select 
-                            name="projectType" value={projectData.projectType} onChange={handleProjectChange}
-                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
-                          >
-                            <option value="" className="text-slate-400">-- Select Type --</option>
-                            <option value="Flat" className="text-slate-900">Flat</option>
-                            <option value="Society" className="text-slate-900">Society</option>
-                            <option value="Commercial" className="text-slate-900">Commercial</option>
-                          </select>
-                          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                            <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
-                          </div>
-                        </div>
-                      </div>
+
                       <div className="sm:col-span-2">
                         <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Cover Image</label>
                         <div className="relative group">
@@ -1607,8 +1649,9 @@ export default function BuilderDashboard() {
               </div>
 
               <div className="p-8 overflow-y-auto bg-white">
+                {error && <div className="mb-6 p-4 bg-red-50 text-red-600 border border-red-100 rounded-xl font-semibold text-sm flex items-center gap-3"><AlertCircle className="w-5 h-5 shrink-0" />{error}</div>}
                 {success && <div className="mb-6 p-4 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl font-semibold text-sm flex items-center gap-3"><CheckCircle2 className="w-5 h-5 shrink-0" />Tower added successfully!</div>}
-                
+
                 {!success && (
                   <form onSubmit={handleTowerSubmit} className="space-y-6">
                     <div>
@@ -1629,7 +1672,7 @@ export default function BuilderDashboard() {
                     <div>
                       <label className="block text-xs font-bold text-slate-500 mb-3 uppercase tracking-widest">Number Series</label>
                       <div className="flex flex-wrap gap-4">
-                        {['1-10', '101-110', '1001-1010'].map((series) => (
+                        {['1-4', '101-104', '1001-1004'].map((series) => (
                           <label key={series} className={`flex items-center gap-2 px-4 py-3 border rounded-xl cursor-pointer transition-all ${towerData.numberSeries === series ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}`}>
                             <input type="radio" name="numberSeries" value={series} checked={towerData.numberSeries === series} onChange={handleTowerChange} className="w-4 h-4 text-blue-600 focus:ring-blue-500" required />
                             <span className="font-semibold">{series}</span>
@@ -1637,7 +1680,7 @@ export default function BuilderDashboard() {
                         ))}
                       </div>
                     </div>
-                    
+
                     <div className="pt-6 mt-4 flex justify-end border-t border-slate-100">
                       <button type="submit" disabled={isSubmitting || success} className="group relative px-8 py-3.5 bg-slate-900 text-white font-extrabold rounded-xl shadow-[0_10px_20px_rgba(0,0,0,0.1)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:hover:translate-y-0 min-w-[160px] flex justify-center items-center overflow-hidden">
                         <span className="relative z-10">{isSubmitting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : (selectedProjectForSidebar?.project_type === 'Society' ? 'Save Section' : 'Add Tower')}</span>

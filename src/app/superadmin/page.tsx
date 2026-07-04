@@ -1097,6 +1097,7 @@ export default function AdminDashboard() {
 
               <div className="p-8 overflow-y-auto bg-white">
                 {error && <div className="mb-6 p-4 bg-red-50 text-red-600 border border-red-100 rounded-xl font-semibold text-sm flex items-center gap-3"><AlertCircle className="w-5 h-5 shrink-0" />{error}</div>}
+                {error && <div className="mb-6 p-4 bg-red-50 text-red-600 border border-red-100 rounded-xl font-semibold text-sm flex items-center gap-3"><AlertCircle className="w-5 h-5 shrink-0" />{error}</div>}
                 {success && <div className="mb-6 p-4 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl font-semibold text-sm flex items-center gap-3"><CheckCircle2 className="w-5 h-5 shrink-0" />Tower added successfully!</div>}
                 
                 {!success && (
@@ -1119,7 +1120,7 @@ export default function AdminDashboard() {
                     <div>
                       <label className="block text-xs font-bold text-slate-500 mb-3 uppercase tracking-widest">Number Series</label>
                       <div className="flex flex-wrap gap-4">
-                        {['1-10', '101-110', '1001-1010'].map((series) => (
+                        {['1-4', '101-104', '1001-1004'].map((series) => (
                           <label key={series} className={`flex items-center gap-2 px-4 py-3 border rounded-xl cursor-pointer transition-all ${towerData.numberSeries === series ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}`}>
                             <input type="radio" name="numberSeries" value={series} checked={towerData.numberSeries === series} onChange={handleTowerChange} className="w-4 h-4 text-blue-600 focus:ring-blue-500" required />
                             <span className="font-semibold">{series}</span>
@@ -1161,6 +1162,7 @@ export default function AdminDashboard() {
               </div>
 
               <div className="p-8 overflow-y-auto bg-white">
+                {error && <div className="mb-6 p-4 bg-red-50 text-red-600 border border-red-100 rounded-xl font-semibold text-sm flex items-center gap-3"><AlertCircle className="w-5 h-5 shrink-0" />{error}</div>}
                 {success && <div className="mb-6 p-4 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl font-semibold text-sm flex items-center gap-3"><CheckCircle2 className="w-5 h-5 shrink-0" />Announcement posted successfully!</div>}
                 
                 {!success && (
