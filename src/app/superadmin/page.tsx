@@ -258,7 +258,7 @@ export default function AdminDashboard() {
       if (!response.ok) throw new Error(data.error || 'Failed to add project');
 
       setSuccess(true);
-      setProjectData({ projectName: '', location: '', status: '', description: '', coverImgUrl: '', expectedPossession: '', customerId: '', projectType: '' });
+      setProjectData({ projectName: '', location: '', status: '', description: '', coverImgUrl: '', expectedPossession: '', builderId: '', projectType: '', googleMapUrl: '' });
       fetchProjects();
       setTimeout(() => { setSuccess(false); setShowProjectForm(false); }, 2000);
     } catch (err: any) {
