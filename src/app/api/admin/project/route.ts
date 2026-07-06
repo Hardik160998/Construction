@@ -38,6 +38,8 @@ export async function POST(request: Request) {
       if (areaSqft) payload.area_sqft = areaSqft;
     } else if (tableName === 'society_project') {
       if (roomNumber) payload.room_number = roomNumber;
+    } else if (tableName === 'commercial_project') {
+      if (areaSqft) payload.area_sqft = areaSqft;
     }
 
     const { data, error } = await supabaseAdmin
@@ -56,6 +58,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to process request.' }, { status: 500 });
   }
 }
+// Trigger HMR update
 
 export async function GET(request: Request) {
   try {
@@ -67,7 +70,7 @@ export async function GET(request: Request) {
     const [flats, societies, commercials] = await Promise.all([
       supabaseAdmin.from('flate_project').select('id, project_name, location, status, description, cover_img_url, expected_possession, customer_id, project_type, created_at, bhk, area_sqft'),
       supabaseAdmin.from('society_project').select('id, project_name, location, status, description, cover_img_url, expected_possession, customer_id, project_type, created_at, room_number'),
-      supabaseAdmin.from('commercial_project').select('id, project_name, location, status, description, cover_img_url, expected_possession, customer_id, project_type, created_at')
+      supabaseAdmin.from('commercial_project').select('id, project_name, location, status, description, cover_img_url, expected_possession, customer_id, project_type, created_at, area_sqft')
     ]);
 
     if (flats.error) throw flats.error;

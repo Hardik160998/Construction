@@ -61,7 +61,7 @@ export default function BuilderDashboard() {
   });
 
   const [towerData, setTowerData] = useState({
-    towerName: '', totalFloors: '', totalHouses: '', numberSeries: '', bhk: ''
+    towerName: '', totalFloors: '', totalHouses: '', numberSeries: '', bhk: '', towerType: '', unitTypes: ''
   });
 
   const [projectTowers, setProjectTowers] = useState<any[]>([]);
@@ -278,11 +278,13 @@ export default function BuilderDashboard() {
   };
 
   const handleBuilderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setBuilderData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const value = e.target.name === 'phone' ? e.target.value.replace(/\D/g, '') : e.target.value;
+    setBuilderData(prev => ({ ...prev, [e.target.name]: value }));
   };
 
   const handleCustomerChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setCustomerData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const value = e.target.name === 'phone' ? e.target.value.replace(/\D/g, '') : e.target.value;
+    setCustomerData(prev => ({ ...prev, [e.target.name]: value }));
   };
 
   const handleProjectChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -389,7 +391,7 @@ export default function BuilderDashboard() {
     }
   };
 
-  const handleTowerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTowerChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setTowerData({ ...towerData, [e.target.name]: e.target.value });
   };
 
@@ -408,7 +410,9 @@ export default function BuilderDashboard() {
           totalFloors: towerData.totalFloors,
           totalHouses: towerData.totalHouses,
           numberSeries: towerData.numberSeries,
-          bhk: towerData.bhk
+          bhk: towerData.bhk,
+          towerType: towerData.towerType,
+          unitTypes: towerData.unitTypes
         }),
       });
       const data = await response.json();
@@ -420,7 +424,7 @@ export default function BuilderDashboard() {
       setTimeout(() => {
         setSuccess(false);
         setShowTowerForm(false);
-        setTowerData({ towerName: '', totalFloors: '', totalHouses: '', numberSeries: '', bhk: '' });
+        setTowerData({ towerName: '', totalFloors: '', totalHouses: '', numberSeries: '', bhk: '', towerType: '', unitTypes: '' });
       }, 1500);
     } catch (err: any) {
       setError(err.message);
@@ -1144,19 +1148,19 @@ export default function BuilderDashboard() {
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Society Name</p>
                       <p className="font-bold text-slate-900">{projects.find(p => p.id === selectedCustomer.project_id)?.project_name || 'N/A'}</p>
                     </div>
-                  ) : (
+                  ) : selectedCustomer.customer_type !== 'Commercial' ? (
                     <div>
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Flat Name</p>
                       <p className="font-bold text-slate-900">{selectedCustomer.flat_name || 'N/A'}</p>
                     </div>
-                  )}
-                  {(selectedCustomer.customer_type === 'Flat' || selectedCustomer.customer_type === 'Society' || selectedCustomer.flat_number) && (
+                  ) : null}
+                  {(selectedCustomer.customer_type === 'Flat' || selectedCustomer.customer_type === 'Society' || selectedCustomer.customer_type === 'Commercial' || selectedCustomer.flat_number) && (
                     <div>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{selectedCustomer.customer_type === 'Society' ? 'House Number' : 'Flat Number'}</p>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{selectedCustomer.customer_type === 'Society' ? 'House Number' : selectedCustomer.customer_type === 'Commercial' ? 'Unit Number' : 'Flat Number'}</p>
                       <p className="font-bold text-slate-900">{selectedCustomer.flat_number || 'N/A'}</p>
                     </div>
                   )}
-                  {selectedCustomer.customer_type !== 'Society' && (
+                  {selectedCustomer.customer_type !== 'Society' && selectedCustomer.customer_type !== 'Commercial' && (
                     <div>
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Project BHK</p>
                       <p className="font-bold text-slate-900">{selectedCustomer.bhk || projects.find(p => p.id === selectedCustomer.project_id)?.bhk || 'N/A'}</p>
@@ -1218,10 +1222,75 @@ export default function BuilderDashboard() {
                         <input type="number" name="totalFloors" required min="1" value={towerData.totalFloors} onChange={handleTowerChange} placeholder="e.g. 15" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
                       </div>
                     )}
-                    {selectedProjectForSidebar?.project_type !== 'Society' && (
+                    {selectedProjectForSidebar?.project_type === 'Commercial' && (
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Tower Type *</label>
+                        <div className="relative">
+                          <select
+                            name="towerType" required value={towerData.towerType} onChange={handleTowerChange}
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
+                          >
+                            <option value="" className="text-slate-400">-- Select Tower Type --</option>
+                            <option value="Residential" className="text-slate-900">Residential</option>
+                            <option value="Commercial" className="text-slate-900">Commercial</option>
+                            <option value="Mixed Use" className="text-slate-900">Mixed Use</option>
+                          </select>
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {selectedProjectForSidebar?.project_type === 'Flat' && (
                       <div>
                         <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">BHK</label>
                         <input type="text" name="bhk" value={towerData.bhk} onChange={handleTowerChange} placeholder="e.g. 2BHK, 3BHK" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
+                      </div>
+                    )}
+                    {selectedProjectForSidebar?.project_type === 'Commercial' && (
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Unit Types *</label>
+                        <div className="relative">
+                          <select 
+                            name="unitTypes" 
+                            required
+                            value={towerData.unitTypes} 
+                            onChange={handleTowerChange} 
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer" 
+                          >
+                            <option value="" className="text-slate-400">
+                              {towerData.towerType === 'Residential' ? '-- Select Residential Type --' : 
+                               towerData.towerType === 'Mixed Use' ? '-- Select Mixed Use Type --' : 
+                               '-- Select Commercial Type --'}
+                            </option>
+                            {towerData.towerType === 'Residential' && (
+                              <>
+                                <option value="1BHK">1BHK</option>
+                                <option value="2BHK">2BHK</option>
+                                <option value="3BHK">3BHK</option>
+                                <option value="4BHK">4BHK</option>
+                              </>
+                            )}
+                            {towerData.towerType === 'Commercial' && (
+                              <>
+                                <option value="Shop">Shop</option>
+                                <option value="Office">Office</option>
+                                <option value="Showroom">Showroom</option>
+                                <option value="Retail Space">Retail Space</option>
+                              </>
+                            )}
+                            {towerData.towerType === 'Mixed Use' && (
+                              <>
+                                <option value="Residential + Shop">Residential + Shop</option>
+                                <option value="Residential + Office">Residential + Office</option>
+                                <option value="Shop + Office">Shop + Office</option>
+                              </>
+                            )}
+                          </select>
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
+                          </div>
+                        </div>
                       </div>
                     )}
                     <div>
@@ -1596,6 +1665,134 @@ export default function BuilderDashboard() {
                         </>
                       )}
 
+                      {customerData.customerType === 'Commercial' && customerData.phone.trim().length > 0 && (
+                        <>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Tower Name</label>
+                            <div className="relative">
+                              <select
+                                name="towerName"
+                                value={customerData.towerName}
+                                onChange={handleCustomerChange}
+                                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
+                              >
+                                <option value="" className="text-slate-400">-- Select a Tower --</option>
+                                {projectTowers.map(t => (
+                                  <option key={t.id} value={t.tower_name} className="text-slate-900">{t.tower_name}</option>
+                                ))}
+                              </select>
+                              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {(() => {
+                            const selectedTower = projectTowers.find(t => t.tower_name === customerData.towerName);
+                            if (!selectedTower) return null;
+                            const availableFloors = Array.from({ length: selectedTower.total_floors || 0 }, (_, i) => i + 1);
+                            
+                            return (
+                              <>
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Floor Number</label>
+                                  <div className="relative">
+                                    <select
+                                      name="floor"
+                                      value={customerData.floor}
+                                      onChange={handleCustomerChange}
+                                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
+                                    >
+                                      <option value="" className="text-slate-400">-- Select a Floor --</option>
+                                      {availableFloors.map(floor => (
+                                        <option key={floor} value={floor} className="text-slate-900">{floor}</option>
+                                      ))}
+                                    </select>
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                      <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {customerData.floor && (
+                                  <div>
+                                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Unit Number</label>
+                                    <div className="relative">
+                                      <select
+                                        name="flatNumber"
+                                        value={customerData.flatNumber}
+                                        onChange={handleCustomerChange}
+                                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
+                                      >
+                                        <option value="" className="text-slate-400">-- Select a Number --</option>
+                                        {(() => {
+                                          if (!selectedTower.number_series) return null;
+                                          const parts = selectedTower.number_series.split(',');
+                                          const numbers: number[] = [];
+                                          parts.forEach((part: string) => {
+                                            if (part.includes('-')) {
+                                              const [start, end] = part.split('-').map(Number);
+                                              if (!isNaN(start) && !isNaN(end)) {
+                                                for (let i = start; i <= end; i++) numbers.push(i);
+                                              }
+                                            } else {
+                                              const num = Number(part);
+                                              if (!isNaN(num)) numbers.push(num);
+                                            }
+                                          });
+                                          
+                                          const floorPrefix = parseInt(customerData.floor);
+                                          const floorNumbers = numbers.filter(n => {
+                                            if (floorPrefix < 10) {
+                                              return n >= floorPrefix * 100 && n < (floorPrefix + 1) * 100;
+                                            }
+                                            return n >= floorPrefix * 100 && n < (floorPrefix + 1) * 100;
+                                          });
+
+                                          const optionsToRender = floorNumbers.length > 0 ? floorNumbers : numbers;
+                                          return optionsToRender.map(num => (
+                                            <option key={num} value={num} className="text-slate-900">{num}</option>
+                                          ));
+                                        })()}
+                                      </select>
+                                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                        <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {selectedTower.tower_type && (
+                                  <div>
+                                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Tower Type</label>
+                                    <input type="text" readOnly value={selectedTower.tower_type} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none text-slate-600 font-semibold cursor-not-allowed" />
+                                  </div>
+                                )}
+                                {selectedTower.unit_types && (
+                                  <div>
+                                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Unit Types</label>
+                                    <input type="text" readOnly value={selectedTower.unit_types} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none text-slate-600 font-semibold cursor-not-allowed" />
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
+                          
+                          {(() => {
+                            const selectedProject = projects.find(p => p.id === customerData.projectId);
+                            if (selectedProject?.area_sqft) {
+                              return (
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Project Area (sqft)</label>
+                                  <input type="text" readOnly value={selectedProject.area_sqft} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none text-slate-600 font-semibold cursor-not-allowed" />
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </>
+                      )}
+
                     </div>
                     <div className="pt-6 mt-4 flex justify-end border-t border-slate-100">
                       <button type="submit" disabled={isSubmitting || success} className="group relative px-8 py-3.5 bg-slate-900 text-white font-extrabold rounded-xl shadow-[0_10px_20px_rgba(0,0,0,0.1)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:hover:translate-y-0 min-w-[160px] flex justify-center items-center overflow-hidden">
@@ -1799,10 +1996,75 @@ export default function BuilderDashboard() {
                         <input type="number" name="totalFloors" required min="1" value={towerData.totalFloors} onChange={handleTowerChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. 15" />
                       </div>
                     )}
-                    {selectedProjectForSidebar?.project_type !== 'Society' && (
+                    {selectedProjectForSidebar?.project_type === 'Commercial' && (
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Tower Type *</label>
+                        <div className="relative">
+                          <select
+                            name="towerType" required value={towerData.towerType} onChange={handleTowerChange}
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
+                          >
+                            <option value="" className="text-slate-400">-- Select Tower Type --</option>
+                            <option value="Residential" className="text-slate-900">Residential</option>
+                            <option value="Commercial" className="text-slate-900">Commercial</option>
+                            <option value="Mixed Use" className="text-slate-900">Mixed Use</option>
+                          </select>
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {selectedProjectForSidebar?.project_type === 'Flat' && (
                       <div>
                         <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">BHK</label>
                         <input type="text" name="bhk" value={towerData.bhk} onChange={handleTowerChange} placeholder="e.g. 2BHK, 3BHK" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
+                      </div>
+                    )}
+                    {selectedProjectForSidebar?.project_type === 'Commercial' && (
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Unit Types *</label>
+                        <div className="relative">
+                          <select 
+                            name="unitTypes" 
+                            required
+                            value={towerData.unitTypes} 
+                            onChange={handleTowerChange} 
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer" 
+                          >
+                            <option value="" className="text-slate-400">
+                              {towerData.towerType === 'Residential' ? '-- Select Residential Type --' : 
+                               towerData.towerType === 'Mixed Use' ? '-- Select Mixed Use Type --' : 
+                               '-- Select Commercial Type --'}
+                            </option>
+                            {towerData.towerType === 'Residential' && (
+                              <>
+                                <option value="1BHK">1BHK</option>
+                                <option value="2BHK">2BHK</option>
+                                <option value="3BHK">3BHK</option>
+                                <option value="4BHK">4BHK</option>
+                              </>
+                            )}
+                            {towerData.towerType === 'Commercial' && (
+                              <>
+                                <option value="Shop">Shop</option>
+                                <option value="Office">Office</option>
+                                <option value="Showroom">Showroom</option>
+                                <option value="Retail Space">Retail Space</option>
+                              </>
+                            )}
+                            {towerData.towerType === 'Mixed Use' && (
+                              <>
+                                <option value="Residential + Shop">Residential + Shop</option>
+                                <option value="Residential + Office">Residential + Office</option>
+                                <option value="Shop + Office">Shop + Office</option>
+                              </>
+                            )}
+                          </select>
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
+                          </div>
+                        </div>
                       </div>
                     )}
                     <div>
