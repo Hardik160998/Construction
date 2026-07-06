@@ -57,7 +57,7 @@ export default function BuilderDashboard() {
   });
 
   const [projectData, setProjectData] = useState({
-    projectName: '', location: '', status: '', description: '', coverImgUrl: '', expectedPossession: '', customerId: '', projectType: '', bhk: '', areaSqft: '', roomNumber: ''
+    projectName: '', location: '', status: '', description: '', coverImgUrl: '', expectedPossession: '', builderId: '', projectType: '', googleMapUrl: ''
   });
 
   const [towerData, setTowerData] = useState({
@@ -348,10 +348,18 @@ export default function BuilderDashboard() {
     setIsSubmitting(true); setError(''); setSuccess(false);
 
     try {
+      const payload = { ...customerData };
+      if (payload.towerName) {
+        const foundTower = projectTowers.find(t => t.tower_name === payload.towerName);
+        if (foundTower) {
+          (payload as any).towerId = foundTower.id;
+        }
+      }
+
       const response = await fetch('/api/admin/customer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(customerData),
+        body: JSON.stringify(payload),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to add customer');
@@ -649,6 +657,7 @@ export default function BuilderDashboard() {
                       towerName={selectedTowerForProgress.tower_name}
                       floorNumber={selectedFloorForProgress}
                       unitType={selectedProjectForSidebar?.project_type === 'Society' ? 'House' : 'Floor'}
+                      projectType={selectedProjectForSidebar?.project_type || 'Flat'}
                       onBack={() => setSelectedFloorForProgress(null)}
                     />
                   ) : (
@@ -901,7 +910,9 @@ export default function BuilderDashboard() {
                                         {customer.tower_name ? (
                                           <>
                                             <div className="font-semibold text-slate-800">{customer.tower_name}</div>
-                                            <div className="text-sm text-slate-500 mt-1">Floor {customer.floor || '-'} | Flat {customer.flat_number || '-'}</div>
+                                            <div className="text-sm text-slate-500 mt-1">
+                                              Floor {customer.floor || '-'} | {customer.customer_type === 'Commercial' ? 'Unit' : 'Flat'} {customer.flat_name || customer.flat_number || '-'}
+                                            </div>
                                             {(customer.bhk || customer.area_sqft) && (
                                               <div className="text-xs text-slate-400 mt-1">
                                                 {customer.bhk && <span>{customer.bhk}</span>}
@@ -1148,12 +1159,17 @@ export default function BuilderDashboard() {
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Society Name</p>
                       <p className="font-bold text-slate-900">{projects.find(p => p.id === selectedCustomer.project_id)?.project_name || 'N/A'}</p>
                     </div>
-                  ) : selectedCustomer.customer_type !== 'Commercial' ? (
+                  ) : selectedCustomer.customer_type === 'Commercial' ? (
+                    <div>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Unit / Shop Name</p>
+                      <p className="font-bold text-slate-900">{selectedCustomer.flat_name || 'N/A'}</p>
+                    </div>
+                  ) : (
                     <div>
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Flat Name</p>
                       <p className="font-bold text-slate-900">{selectedCustomer.flat_name || 'N/A'}</p>
                     </div>
-                  ) : null}
+                  )}
                   {(selectedCustomer.customer_type === 'Flat' || selectedCustomer.customer_type === 'Society' || selectedCustomer.customer_type === 'Commercial' || selectedCustomer.flat_number) && (
                     <div>
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{selectedCustomer.customer_type === 'Society' ? 'House Number' : selectedCustomer.customer_type === 'Commercial' ? 'Unit Number' : 'Flat Number'}</p>
@@ -1496,6 +1512,24 @@ export default function BuilderDashboard() {
                         </div>
                       </div>
 
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Assign to Builder (Optional)</label>
+                        <div className="relative">
+                          <select
+                            name="builderId" value={customerData.builderId || ''} onChange={(e) => setCustomerData(prev => ({ ...prev, builderId: e.target.value }))}
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
+                          >
+                            <option value="" className="text-slate-400">-- Select a Builder --</option>
+                            {builders.map(b => (
+                              <option key={b.id} value={b.id} className="text-slate-900">{b.company_name} ({b.contact_name})</option>
+                            ))}
+                          </select>
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
+                          </div>
+                        </div>
+                      </div>
+
                       <div>
                         <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">First Name *</label>
                         <input type="text" name="firstName" required value={customerData.firstName} onChange={handleCustomerChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="Jane" />
@@ -1673,7 +1707,9 @@ export default function BuilderDashboard() {
                               <select
                                 name="towerName"
                                 value={customerData.towerName}
-                                onChange={handleCustomerChange}
+                                onChange={(e) => {
+                                  handleCustomerChange(e);
+                                }}
                                 className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
                               >
                                 <option value="" className="text-slate-400">-- Select a Tower --</option>
@@ -1774,22 +1810,18 @@ export default function BuilderDashboard() {
                                     <input type="text" readOnly value={selectedTower.unit_types} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none text-slate-600 font-semibold cursor-not-allowed" />
                                   </div>
                                 )}
-                              </>
-                            );
-                          })()}
-                          
-                          {(() => {
-                            const selectedProject = projects.find(p => p.id === customerData.projectId);
-                            if (selectedProject?.area_sqft) {
-                              return (
-                                <div>
-                                  <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Project Area (sqft)</label>
-                                  <input type="text" readOnly value={selectedProject.area_sqft} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none text-slate-600 font-semibold cursor-not-allowed" />
-                                </div>
+                                  <div>
+                                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Unit / Shop Name</label>
+                                    <input type="text" name="flatName" value={customerData.flatName} onChange={handleCustomerChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. Ground Floor Shop 1" />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Unit Area (sqft)</label>
+                                    <input type="number" name="areaSqft" value={customerData.areaSqft} onChange={handleCustomerChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. 1500" />
+                                  </div>
+                                </>
                               );
-                            }
-                            return null;
-                          })()}
+                            })()}
+                          
                         </>
                       )}
 
@@ -1845,9 +1877,9 @@ export default function BuilderDashboard() {
                             className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
                           >
                             <option value="" className="text-slate-400">-- Select Type --</option>
-                            <option value="Flat" className="text-slate-900">Flat</option>
-                            <option value="Society" className="text-slate-900">Society</option>
-                            <option value="Commercial" className="text-slate-900">Commercial</option>
+                            <option value="Flat" className="text-slate-900">flat</option>
+                            <option value="Society" className="text-slate-900">society</option>
+                            <option value="Commercial" className="text-slate-900">commercial</option>
                           </select>
                           <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                             <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
@@ -1872,22 +1904,9 @@ export default function BuilderDashboard() {
                         </div>
                       </div>
 
-                      
-                      {projectData.projectType === 'Flat' && (
-                        <div>
-                          <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">BHK</label>
-                          <input type="text" name="bhk" value={projectData.bhk} onChange={handleProjectChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. 2BHK, 3BHK" />
-                        </div>
-                      )}
-                      {projectData.projectType === 'Society' && (
-                        <div>
-                          <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Total Rooms</label>
-                          <input type="text" name="roomNumber" value={projectData.roomNumber} onChange={handleProjectChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. 5" />
-                        </div>
-                      )}
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Area (sqft)</label>
-                        <input type="text" name="areaSqft" value={projectData.areaSqft} onChange={handleProjectChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. 1500" />
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Google Map URL</label>
+                        <input type="text" name="googleMapUrl" value={projectData.googleMapUrl} onChange={handleProjectChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. https://maps.google.com/..." />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Expected Possession</label>

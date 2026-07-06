@@ -7,10 +7,15 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const towerId = searchParams.get('towerId');
     const floorNumber = searchParams.get('floorNumber');
+    const projectType = searchParams.get('projectType') || 'Flat';
 
     if (!towerId || !floorNumber) {
       return NextResponse.json({ error: 'Missing towerId or floorNumber' }, { status: 400 });
     }
+
+    let tableName = 'floor_progress';
+    if (projectType === 'Society') tableName = 'society_progress';
+    else if (projectType === 'Commercial') tableName = 'commercial_progress';
 
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -18,7 +23,7 @@ export async function GET(request: Request) {
     );
 
     let { data, error } = await supabaseAdmin
-      .from('floor_progress')
+      .from(tableName)
       .select('*')
       .eq('tower_id', towerId)
       .eq('floor_number', parseInt(floorNumber, 10))
@@ -27,7 +32,7 @@ export async function GET(request: Request) {
     if (error && error.code === 'PGRST116') {
       // Row not found, create it on the fly
       const { data: newRow, error: insertError } = await supabaseAdmin
-        .from('floor_progress')
+        .from(tableName)
         .insert([{ tower_id: towerId, floor_number: parseInt(floorNumber, 10) }])
         .select()
         .single();
@@ -50,11 +55,15 @@ export async function GET(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const { towerId, floorNumber, updates } = body;
+    const { towerId, floorNumber, updates, projectType = 'Flat' } = body;
 
     if (!towerId || floorNumber === undefined || !updates || Object.keys(updates).length === 0) {
       return NextResponse.json({ error: 'Missing towerId, floorNumber, or updates payload' }, { status: 400 });
     }
+
+    let tableName = 'floor_progress';
+    if (projectType === 'Society') tableName = 'society_progress';
+    else if (projectType === 'Commercial') tableName = 'commercial_progress';
 
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -62,7 +71,7 @@ export async function PATCH(request: Request) {
     );
 
     const { data, error } = await supabaseAdmin
-      .from('floor_progress')
+      .from(tableName)
       .update(updates)
       .eq('tower_id', towerId)
       .eq('floor_number', parseInt(floorNumber, 10))

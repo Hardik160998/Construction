@@ -3,14 +3,13 @@ export const dynamic = 'force-dynamic';
 import { createClient } from '@supabase/supabase-js';
 
 async function getTowerTableNameByProjectId(supabaseAdmin: any, projectId: string) {
-  const [f, s, c] = await Promise.all([
-    supabaseAdmin.from('flate_project').select('id').eq('id', projectId).limit(1),
-    supabaseAdmin.from('society_project').select('id').eq('id', projectId).limit(1),
-    supabaseAdmin.from('commercial_project').select('id').eq('id', projectId).limit(1)
-  ]);
-  if (f.data && f.data.length > 0) return 'flate_tower';
-  if (s.data && s.data.length > 0) return 'society_section';
-  if (c.data && c.data.length > 0) return 'commercial_tower';
+  const { data } = await supabaseAdmin.from('project').select('pro_type').eq('id', projectId).limit(1);
+  if (data && data.length > 0) {
+    const type = data[0].pro_type;
+    if (type === 'Society') return 'society_section';
+    if (type === 'Commercial') return 'commercial_tower';
+    return 'flate_tower';
+  }
   return 'flate_tower';
 }
 

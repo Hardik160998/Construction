@@ -7,10 +7,11 @@ interface TowerProgressProps {
   towerName: string;
   floorNumber: number;
   unitType?: string;
+  projectType?: string;
   onBack: () => void;
 }
 
-export default function TowerProgress({ towerId, towerName, floorNumber, onBack, unitType = 'Floor' }: TowerProgressProps) {
+export default function TowerProgress({ towerId, towerName, floorNumber, onBack, unitType = 'Floor', projectType = 'Flat' }: TowerProgressProps) {
   const [phases, setPhases] = useState<{ id: string; name: string; progress: number; imageUrl: string | null }[]>([
     { id: 'foundation', name: 'Foundation', progress: 0, imageUrl: null },
     { id: 'structure', name: 'Structure', progress: 0, imageUrl: null },
@@ -30,7 +31,7 @@ export default function TowerProgress({ towerId, towerName, floorNumber, onBack,
     if (!towerId || floorNumber === undefined) return;
     const fetchTower = async () => {
       try {
-        const res = await fetch(`/api/admin/floor-progress?towerId=${towerId}&floorNumber=${floorNumber}`);
+        const res = await fetch(`/api/admin/floor-progress?towerId=${towerId}&floorNumber=${floorNumber}&projectType=${projectType}`);
         const data = await res.json();
         if (data.success && data.progress) {
           const progressData = data.progress;
@@ -58,6 +59,7 @@ export default function TowerProgress({ towerId, towerName, floorNumber, onBack,
           body: JSON.stringify({
             towerId,
             floorNumber,
+            projectType,
             updates: { [`${id}_completed`]: completed }
           })
         });
@@ -112,6 +114,7 @@ export default function TowerProgress({ towerId, towerName, floorNumber, onBack,
           body: JSON.stringify({
             towerId,
             floorNumber,
+            projectType,
             updates: { [`${phaseId}_image`]: newImageUrlString }
           })
         });

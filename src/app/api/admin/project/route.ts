@@ -5,17 +5,10 @@ import { createClient } from '@supabase/supabase-js';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { projectName, location, status, description, coverImgUrl, expectedPossession, customerId, projectType, bhk, areaSqft, roomNumber } = body;
+    const { projectName, location, status, description, coverImgUrl, expectedPossession, builderId, projectType, googleMapUrl } = body;
 
     if (!projectName) {
       return NextResponse.json({ error: 'Project name is required' }, { status: 400 });
-    }
-
-    let tableName = 'flate_project';
-    if (projectType === 'Society') {
-      tableName = 'society_project';
-    } else if (projectType === 'Commercial') {
-      tableName = 'commercial_project';
     }
 
     const supabaseAdmin = createClient(
@@ -24,26 +17,19 @@ export async function POST(request: Request) {
     );
 
     const payload: any = {
-      project_name: projectName,
+      p_name: projectName,
       location: location || null,
       status: status || null,
-      description: description || null,
-      cover_img_url: coverImgUrl || null,
-      expected_possession: expectedPossession || null,
-      customer_id: customerId || null,
-      project_type: projectType || null,
+      descri: description || null,
+      image: coverImgUrl || null,
+      possesion: expectedPossession || null,
+      builder_id: builderId || null,
+      pro_type: projectType || null,
+      google_map: googleMapUrl || null,
     };
-    if (tableName === 'flate_project') {
-      if (bhk) payload.bhk = bhk;
-      if (areaSqft) payload.area_sqft = areaSqft;
-    } else if (tableName === 'society_project') {
-      if (roomNumber) payload.room_number = roomNumber;
-    } else if (tableName === 'commercial_project') {
-      if (areaSqft) payload.area_sqft = areaSqft;
-    }
 
     const { data, error } = await supabaseAdmin
-      .from(tableName)
+      .from('project')
       .insert([payload])
       .select();
 
@@ -52,13 +38,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `Database Error: ${error.message}` }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, project: data[0] });
+    const dbProject = data[0];
+    const project = {
+      id: dbProject.id,
+      project_name: dbProject.p_name,
+      location: dbProject.location,
+      status: dbProject.status,
+      description: dbProject.descri,
+      cover_img_url: dbProject.image,
+      expected_possession: dbProject.possesion,
+      builder_id: dbProject.builder_id,
+      project_type: dbProject.pro_type,
+      google_map: dbProject.google_map,
+      created_at: dbProject.created_at
+    };
+
+    return NextResponse.json({ success: true, project: project });
   } catch (error) {
     console.error('API Error:', error);
     return NextResponse.json({ error: 'Failed to process request.' }, { status: 500 });
   }
 }
-// Trigger HMR update
 
 export async function GET(request: Request) {
   try {
@@ -67,23 +67,28 @@ export async function GET(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
     );
 
-    const [flats, societies, commercials] = await Promise.all([
-      supabaseAdmin.from('flate_project').select('id, project_name, location, status, description, cover_img_url, expected_possession, customer_id, project_type, created_at, bhk, area_sqft'),
-      supabaseAdmin.from('society_project').select('id, project_name, location, status, description, cover_img_url, expected_possession, customer_id, project_type, created_at, room_number'),
-      supabaseAdmin.from('commercial_project').select('id, project_name, location, status, description, cover_img_url, expected_possession, customer_id, project_type, created_at, area_sqft')
-    ]);
+    const { data: projects, error } = await supabaseAdmin
+      .from('project')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-    if (flats.error) throw flats.error;
-    if (societies.error) throw societies.error;
-    if (commercials.error) throw commercials.error;
+    if (error) throw error;
 
-    const allProjects = [
-      ...(flats.data || []),
-      ...(societies.data || []),
-      ...(commercials.data || [])
-    ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    const mappedProjects = (projects || []).map(p => ({
+      id: p.id,
+      project_name: p.p_name,
+      location: p.location,
+      status: p.status,
+      description: p.descri,
+      cover_img_url: p.image,
+      expected_possession: p.possesion,
+      builder_id: p.builder_id,
+      project_type: p.pro_type,
+      google_map: p.google_map,
+      created_at: p.created_at
+    }));
 
-    return NextResponse.json({ success: true, projects: allProjects });
+    return NextResponse.json({ success: true, projects: mappedProjects });
   } catch (error: any) {
     console.error('API Error:', error);
     return NextResponse.json({ error: 'Failed to fetch projects.' }, { status: 500 });

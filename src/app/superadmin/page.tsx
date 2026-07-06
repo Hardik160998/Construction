@@ -47,7 +47,7 @@ export default function AdminDashboard() {
   });
 
   const [projectData, setProjectData] = useState({
-    projectName: '', location: '', status: '', description: '', coverImgUrl: '', expectedPossession: '', customerId: '', projectType: ''
+    projectName: '', location: '', status: '', description: '', coverImgUrl: '', expectedPossession: '', builderId: '', projectType: '', googleMapUrl: ''
   });
 
   const [towerData, setTowerData] = useState({
@@ -633,6 +633,7 @@ export default function AdminDashboard() {
                       <table className="w-full text-left border-collapse min-w-[600px]">
                         <thead>
                           <tr className="border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
+                            <th className="pb-4 px-4">Builder ID</th>
                             <th className="pb-4 px-4">Company Name</th>
                             <th className="pb-4 px-4">Contact</th>
                             <th className="pb-4 px-4">Email</th>
@@ -642,13 +643,14 @@ export default function AdminDashboard() {
                         <tbody className="text-slate-700">
                           {builders.length === 0 ? (
                             <tr>
-                              <td colSpan={4} className="py-12 text-center text-slate-500 font-medium">
+                              <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
                                 No builders deployed yet. Click 'Add Builder' to initialize one.
                               </td>
                             </tr>
                           ) : (
                             builders.map((builder) => (
                               <tr key={builder.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group">
+                                <td className="py-5 px-4 font-mono text-xs text-slate-500">{builder.id}</td>
                                 <td className="py-5 px-4 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{builder.company_name}</td>
                                 <td className="py-5 px-4 text-slate-600 font-medium">{builder.contact_name}</td>
                                 <td className="py-5 px-4 text-slate-600 font-medium">{builder.email}</td>
@@ -713,6 +715,7 @@ export default function AdminDashboard() {
                           <tr className="border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
                             <th className="pb-4 px-4">Project Name</th>
                             <th className="pb-4 px-4">Location</th>
+                            <th className="pb-4 px-4">Builder</th>
                             <th className="pb-4 px-4">Expected Possession</th>
                             <th className="pb-4 px-4 text-right">Status</th>
                             <th className="pb-4 px-4 text-right">Actions</th>
@@ -721,7 +724,7 @@ export default function AdminDashboard() {
                         <tbody className="text-slate-700">
                           {projects.length === 0 ? (
                             <tr>
-                              <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
+                              <td colSpan={6} className="py-12 text-center text-slate-500 font-medium">
                                 No projects registered in the network yet.
                               </td>
                             </tr>
@@ -730,6 +733,13 @@ export default function AdminDashboard() {
                               <tr key={project.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group">
                                 <td className="py-5 px-4 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{project.project_name}</td>
                                 <td className="py-5 px-4 text-slate-600 font-medium">{project.location || 'N/A'}</td>
+                                <td className="py-5 px-4 text-slate-600 font-medium">
+                                  {project.builder_id ? (
+                                    builders.find(b => b.id === project.builder_id)?.company_name || 'Unknown Builder'
+                                  ) : (
+                                    <span className="text-red-500 italic">Unassigned (Null)</span>
+                                  )}
+                                </td>
                                 <td className="py-5 px-4 text-slate-600 font-medium">{project.expected_possession || project.expectedPossession || 'N/A'}</td>
                                 <td className="py-5 px-4 text-right">
                                   <span className={`inline-block px-3 py-1 rounded-full text-xs font-extrabold tracking-wider border ${
@@ -958,14 +968,38 @@ export default function AdminDashboard() {
                             className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
                           >
                             <option value="" className="text-slate-400">-- Select Type --</option>
-                            <option value="Flat" className="text-slate-900">Flat</option>
-                            <option value="Society" className="text-slate-900">Society</option>
-                            <option value="Commercial" className="text-slate-900">Commercial</option>
+                            <option value="Flat" className="text-slate-900">flat</option>
+                            <option value="Society" className="text-slate-900">society</option>
+                            <option value="Commercial" className="text-slate-900">commercial</option>
                           </select>
                           <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                             <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
                           </div>
                         </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Assign Builder</label>
+                        <div className="relative">
+                          <select 
+                            name="builderId" value={projectData.builderId || ''} onChange={handleProjectChange}
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
+                            required
+                          >
+                            <option value="" className="text-slate-400">-- Select Builder --</option>
+                            {builders.map(b => (
+                              <option key={b.id} value={b.id} className="text-slate-900">
+                                {b.contact_name} ({b.company_name})
+                              </option>
+                            ))}
+                          </select>
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Google Map URL</label>
+                        <input type="text" name="googleMapUrl" value={projectData.googleMapUrl} onChange={handleProjectChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. https://maps.google.com/..." />
                       </div>
                       <div className="sm:col-span-2">
                         <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Cover Image</label>
