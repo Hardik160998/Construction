@@ -90,9 +90,9 @@ export async function GET(request: Request) {
     ]);
 
     const allCustomers = [
-      ...(f.data || []),
-      ...(s.data || []),
-      ...(c.data || [])
+      ...(f.data || []).map(c => ({ ...c, customer_type: 'Flat' })),
+      ...(s.data || []).map(c => ({ ...c, customer_type: 'Society' })),
+      ...(c.data || []).map(c => ({ ...c, customer_type: 'Commercial' }))
     ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     return NextResponse.json({ success: true, customers: allCustomers });

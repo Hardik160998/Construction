@@ -5,10 +5,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface TowerProgressProps {
   towerId: string;
   towerName: string;
+  floorNumber: number;
+  unitType?: string;
   onBack: () => void;
 }
 
-export default function TowerProgress({ towerId, towerName, onBack }: TowerProgressProps) {
+export default function TowerProgress({ towerId, towerName, floorNumber, onBack, unitType = 'Floor' }: TowerProgressProps) {
   const [phases, setPhases] = useState<{ id: string; name: string; progress: number; imageUrl: string | null }[]>([
     { id: 'foundation', name: 'Foundation', progress: 0, imageUrl: null },
     { id: 'structure', name: 'Structure', progress: 0, imageUrl: null },
@@ -25,36 +27,37 @@ export default function TowerProgress({ towerId, towerName, onBack }: TowerProgr
   const [showImageAnalysis, setShowImageAnalysis] = useState(false);
 
   useEffect(() => {
-    if (!towerId) return;
+    if (!towerId || floorNumber === undefined) return;
     const fetchTower = async () => {
       try {
-        const res = await fetch(`/api/admin/tower?id=${towerId}`);
+        const res = await fetch(`/api/admin/floor-progress?towerId=${towerId}&floorNumber=${floorNumber}`);
         const data = await res.json();
-        if (data.success && data.towers.length > 0) {
-          const tower = data.towers[0];
+        if (data.success && data.progress) {
+          const progressData = data.progress;
           setPhases(prev => prev.map(p => ({
             ...p,
-            progress: tower[`${p.id}_completed`] ? 100 : 0,
-            imageUrl: tower[`${p.id}_image`] || null,
+            progress: progressData[`${p.id}_completed`] ? 100 : 0,
+            imageUrl: progressData[`${p.id}_image`] || null,
           })));
         }
       } catch (err) {
-        console.error('Failed to load tower progress', err);
+        console.error('Failed to load floor progress', err);
       }
     };
     fetchTower();
-  }, [towerId]);
+  }, [towerId, floorNumber]);
 
   const togglePhase = async (id: string, completed: boolean) => {
     setPhases(prev => prev.map(p => p.id === id ? { ...p, progress: completed ? 100 : 0 } : p));
     
-    if (towerId) {
+    if (towerId && floorNumber !== undefined) {
       try {
-        await fetch('/api/admin/tower', {
+        await fetch('/api/admin/floor-progress', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            id: towerId,
+            towerId,
+            floorNumber,
             updates: { [`${id}_completed`]: completed }
           })
         });
@@ -102,12 +105,13 @@ export default function TowerProgress({ towerId, towerName, onBack }: TowerProgr
       
       setPhases(prev => prev.map(p => p.id === phaseId ? { ...p, imageUrl: newImageUrlString } : p));
       
-      if (towerId) {
-        await fetch('/api/admin/tower', {
+      if (towerId && floorNumber !== undefined) {
+        await fetch('/api/admin/floor-progress', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            id: towerId,
+            towerId,
+            floorNumber,
             updates: { [`${phaseId}_image`]: newImageUrlString }
           })
         });
@@ -125,12 +129,18 @@ export default function TowerProgress({ towerId, towerName, onBack }: TowerProgr
         {/* Header */}
         <div className="mb-10 flex items-center justify-between">
           <div className="flex items-center gap-6">
+            <button 
+              onClick={onBack}
+              className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-all shadow-sm"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
             <div>
               <div className="flex items-center gap-3 mb-1">
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-violet-600 text-white rounded-xl flex items-center justify-center shadow-md shrink-0">
                   <Building2 className="w-5 h-5" />
                 </div>
-                <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">{towerName}</h1>
+                <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">{towerName} - {unitType} {floorNumber}</h1>
               </div>
               <p className="text-slate-500 font-medium ml-[52px]">Track construction phases and update progress</p>
             </div>

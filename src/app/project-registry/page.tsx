@@ -5,6 +5,7 @@ import { Building2, Plus, LogOut, CheckCircle2, AlertCircle, Users, HardHat, Map
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import TowerProgress from '@/components/TowerProgress';
+import FloorList from '@/components/FloorList';
 
 export default function BuilderDashboard() {
   const [activeTab, setActiveTab] = useState<'builder' | 'customer' | 'project'>('project');
@@ -44,6 +45,7 @@ export default function BuilderDashboard() {
   const [selectedProjectForSidebar, setSelectedProjectForSidebar] = useState<any>(null);
   const [activeProjectSubTab, setActiveProjectSubTab] = useState<'progress' | 'announcement' | 'flats' | 'staff' | null>(null);
   const [selectedTowerForProgress, setSelectedTowerForProgress] = useState<any>(null);
+  const [selectedFloorForProgress, setSelectedFloorForProgress] = useState<number | null>(null);
 
   // Form States
   const [builderData, setBuilderData] = useState({
@@ -55,7 +57,7 @@ export default function BuilderDashboard() {
   });
 
   const [projectData, setProjectData] = useState({
-    projectName: '', location: '', status: '', description: '', coverImgUrl: '', expectedPossession: '', customerId: '', projectType: '', bhk: '', areaSqft: '', roomNumber: '', roomNumber: ''
+    projectName: '', location: '', status: '', description: '', coverImgUrl: '', expectedPossession: '', customerId: '', projectType: '', bhk: '', areaSqft: '', roomNumber: ''
   });
 
   const [towerData, setTowerData] = useState({
@@ -377,7 +379,7 @@ export default function BuilderDashboard() {
       if (!response.ok) throw new Error(data.error || 'Failed to add project');
 
       setSuccess(true);
-      setProjectData({ projectName: '', location: '', status: '', description: '', coverImgUrl: '', expectedPossession: '', customerId: '', projectType: '', bhk: '', areaSqft: '' });
+      setProjectData({ projectName: '', location: '', status: '', description: '', coverImgUrl: '', expectedPossession: '', customerId: '', projectType: '', bhk: '', areaSqft: '', roomNumber: '' });
       fetchProjects();
       setTimeout(() => { setSuccess(false); setShowProjectForm(false); }, 2000);
     } catch (err: any) {
@@ -418,7 +420,7 @@ export default function BuilderDashboard() {
       setTimeout(() => {
         setSuccess(false);
         setShowTowerForm(false);
-        setTowerData({ towerName: '', totalFloors: '', totalHouses: '', numberSeries: '' });
+        setTowerData({ towerName: '', totalFloors: '', totalHouses: '', numberSeries: '', bhk: '' });
       }, 1500);
     } catch (err: any) {
       setError(err.message);
@@ -637,11 +639,25 @@ export default function BuilderDashboard() {
                 </div>
 
                 {activeProjectSubTab === 'progress' && selectedTowerForProgress ? (
-                  <TowerProgress
-                    towerId={selectedTowerForProgress.id}
-                    towerName={selectedTowerForProgress.tower_name}
-                    onBack={() => setSelectedTowerForProgress(null)}
-                  />
+                  selectedFloorForProgress ? (
+                    <TowerProgress
+                      towerId={selectedTowerForProgress.id}
+                      towerName={selectedTowerForProgress.tower_name}
+                      floorNumber={selectedFloorForProgress}
+                      unitType={selectedProjectForSidebar?.project_type === 'Society' ? 'House' : 'Floor'}
+                      onBack={() => setSelectedFloorForProgress(null)}
+                    />
+                  ) : (
+                    <FloorList
+                      towerId={selectedTowerForProgress.id}
+                      towerName={selectedTowerForProgress.tower_name}
+                      totalFloors={selectedTowerForProgress.total_floors || selectedTowerForProgress.total_houses}
+                      numberSeries={selectedTowerForProgress.number_series}
+                      unitType={selectedProjectForSidebar?.project_type === 'Society' ? 'House' : 'Floor'}
+                      onSelectFloor={(floor) => setSelectedFloorForProgress(floor)}
+                      onBack={() => setSelectedTowerForProgress(null)}
+                    />
+                  )
                 ) : activeProjectSubTab === 'progress' && towers.length > 0 ? (
                   <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {towers.map(tower => (
@@ -1113,34 +1129,43 @@ export default function BuilderDashboard() {
                       <p className="font-bold text-slate-900">{builders.find(b => b.id === selectedCustomer.builder_id)?.contact_name || 'N/A'} ({builders.find(b => b.id === selectedCustomer.builder_id)?.company_name || 'N/A'})</p>
                     </div>
                   )}
+                  {selectedCustomer.customer_type !== 'Society' && (
+                    <div>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Floor</p>
+                      <p className="font-bold text-slate-900">{selectedCustomer.floor || 'N/A'}</p>
+                    </div>
+                  )}
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Floor</p>
-                    <p className="font-bold text-slate-900">{selectedCustomer.floor || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Tower Name</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{selectedCustomer.customer_type === 'Society' ? 'Section Name' : 'Tower Name'}</p>
                     <p className="font-bold text-slate-900">{selectedCustomer.tower_name || 'N/A'}</p>
                   </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Flat Name</p>
-                    <p className="font-bold text-slate-900">{selectedCustomer.flat_name || 'N/A'}</p>
-                  </div>
-                  {(selectedCustomer.customer_type === 'Flat' || selectedCustomer.flat_number) && (
+                  {selectedCustomer.customer_type === 'Society' ? (
                     <div>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Flat Number</p>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Society Name</p>
+                      <p className="font-bold text-slate-900">{projects.find(p => p.id === selectedCustomer.project_id)?.project_name || 'N/A'}</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Flat Name</p>
+                      <p className="font-bold text-slate-900">{selectedCustomer.flat_name || 'N/A'}</p>
+                    </div>
+                  )}
+                  {(selectedCustomer.customer_type === 'Flat' || selectedCustomer.customer_type === 'Society' || selectedCustomer.flat_number) && (
+                    <div>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{selectedCustomer.customer_type === 'Society' ? 'House Number' : 'Flat Number'}</p>
                       <p className="font-bold text-slate-900">{selectedCustomer.flat_number || 'N/A'}</p>
                     </div>
                   )}
-                  {(selectedCustomer.bhk || projects.find(p => p.id === selectedCustomer.project_id)?.bhk) && (
+                  {selectedCustomer.customer_type !== 'Society' && (
                     <div>
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Project BHK</p>
-                      <p className="font-bold text-slate-900">{selectedCustomer.bhk || projects.find(p => p.id === selectedCustomer.project_id)?.bhk}</p>
+                      <p className="font-bold text-slate-900">{selectedCustomer.bhk || projects.find(p => p.id === selectedCustomer.project_id)?.bhk || 'N/A'}</p>
                     </div>
                   )}
-                  {(selectedCustomer.area_sqft || projects.find(p => p.id === selectedCustomer.project_id)?.area_sqft) && (
+                  {selectedCustomer.customer_type !== 'Society' && (
                     <div>
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Area (sqft)</p>
-                      <p className="font-bold text-slate-900">{selectedCustomer.area_sqft || projects.find(p => p.id === selectedCustomer.project_id)?.area_sqft} sqft</p>
+                      <p className="font-bold text-slate-900">{selectedCustomer.area_sqft || projects.find(p => p.id === selectedCustomer.project_id)?.area_sqft ? `${selectedCustomer.area_sqft || projects.find(p => p.id === selectedCustomer.project_id)?.area_sqft} sqft` : 'N/A'}</p>
                     </div>
                   )}
                 </div>
@@ -1193,19 +1218,25 @@ export default function BuilderDashboard() {
                         <input type="number" name="totalFloors" required min="1" value={towerData.totalFloors} onChange={handleTowerChange} placeholder="e.g. 15" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
                       </div>
                     )}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">BHK</label>
-                      <input type="text" name="bhk" value={towerData.bhk} onChange={handleTowerChange} placeholder="e.g. 2BHK, 3BHK" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
-                    </div>
+                    {selectedProjectForSidebar?.project_type !== 'Society' && (
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">BHK</label>
+                        <input type="text" name="bhk" value={towerData.bhk} onChange={handleTowerChange} placeholder="e.g. 2BHK, 3BHK" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
+                      </div>
+                    )}
                     <div>
                       <label className="block text-xs font-bold text-slate-500 mb-3 uppercase tracking-widest">Number Series</label>
                       <div className="flex flex-wrap gap-4">
-                        {['1-4', '101-104', '1001-1004'].map((series) => (
-                          <label key={series} className={`flex items-center gap-2 px-4 py-3 border rounded-xl cursor-pointer transition-all ${towerData.numberSeries === series ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}`}>
-                            <input type="radio" name="numberSeries" value={series} checked={towerData.numberSeries === series} onChange={handleTowerChange} className="w-4 h-4 text-blue-600 focus:ring-blue-500" required />
-                            <span className="font-semibold">{series}</span>
-                          </label>
-                        ))}
+                        {(() => {
+                          const n = parseInt(selectedProjectForSidebar?.project_type === 'Society' ? towerData.totalHouses : towerData.totalFloors) || 4;
+                          const options = [`1-${n}`, `101-${100 + n}`, `1001-${1000 + n}`];
+                          return options.map((series) => (
+                            <label key={series} className={`flex items-center gap-2 px-4 py-3 border rounded-xl cursor-pointer transition-all ${towerData.numberSeries === series ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}`}>
+                              <input type="radio" name="numberSeries" value={series} checked={towerData.numberSeries === series} onChange={handleTowerChange} className="w-4 h-4 text-blue-600 focus:ring-blue-500" required />
+                              <span className="font-semibold">{series}</span>
+                            </label>
+                          ));
+                        })()}
                       </div>
                     </div>
                     <div className="pt-6 mt-4 flex justify-end border-t border-slate-100">
@@ -1489,6 +1520,81 @@ export default function BuilderDashboard() {
                           )}
                         </>
                       )}
+                      {customerData.customerType === 'Society' && customerData.phone.trim().length > 0 && (
+                        <>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Society Section</label>
+                            <div className="relative">
+                              <select
+                                name="towerName"
+                                value={customerData.towerName}
+                                onChange={handleCustomerChange}
+                                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
+                              >
+                                <option value="" className="text-slate-400">-- Select a Section --</option>
+                                {projectTowers.map(t => (
+                                  <option key={t.id} value={t.tower_name} className="text-slate-900">{t.tower_name}</option>
+                                ))}
+                              </select>
+                              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Number Series</label>
+                            <div className="relative">
+                              <select
+                                name="flatNumber"
+                                value={customerData.flatNumber}
+                                onChange={handleCustomerChange}
+                                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
+                              >
+                                <option value="" className="text-slate-400">-- Select a Number --</option>
+                                {(() => {
+                                  const selectedTower = projectTowers.find(t => t.tower_name === customerData.towerName);
+                                  if (!selectedTower || !selectedTower.number_series) return null;
+                                  
+                                  const parts = selectedTower.number_series.split(',');
+                                  const numbers: number[] = [];
+                                  parts.forEach((part: string) => {
+                                    if (part.includes('-')) {
+                                      const [start, end] = part.split('-').map(Number);
+                                      if (!isNaN(start) && !isNaN(end)) {
+                                        for (let i = start; i <= end; i++) numbers.push(i);
+                                      }
+                                    } else {
+                                      const num = Number(part);
+                                      if (!isNaN(num)) numbers.push(num);
+                                    }
+                                  });
+                                  
+                                  return numbers.map(num => (
+                                    <option key={num} value={num} className="text-slate-900">{num}</option>
+                                  ));
+                                })()}
+                              </select>
+                              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
+                              </div>
+                            </div>
+                          </div>
+
+                          {(() => {
+                            const selectedProject = projects.find(p => p.id === customerData.projectId);
+                            if (selectedProject?.area_sqft) {
+                              return (
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Project Area (sqft)</label>
+                                  <input type="text" readOnly value={selectedProject.area_sqft} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none text-slate-600 font-semibold cursor-not-allowed" />
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </>
+                      )}
 
                     </div>
                     <div className="pt-6 mt-4 flex justify-end border-t border-slate-100">
@@ -1570,6 +1676,18 @@ export default function BuilderDashboard() {
                       </div>
 
                       
+                      {projectData.projectType === 'Flat' && (
+                        <div>
+                          <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">BHK</label>
+                          <input type="text" name="bhk" value={projectData.bhk} onChange={handleProjectChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. 2BHK, 3BHK" />
+                        </div>
+                      )}
+                      {projectData.projectType === 'Society' && (
+                        <div>
+                          <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Total Rooms</label>
+                          <input type="text" name="roomNumber" value={projectData.roomNumber} onChange={handleProjectChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. 5" />
+                        </div>
+                      )}
                       <div>
                         <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Area (sqft)</label>
                         <input type="text" name="areaSqft" value={projectData.areaSqft} onChange={handleProjectChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. 1500" />
@@ -1681,19 +1799,25 @@ export default function BuilderDashboard() {
                         <input type="number" name="totalFloors" required min="1" value={towerData.totalFloors} onChange={handleTowerChange} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" placeholder="e.g. 15" />
                       </div>
                     )}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">BHK</label>
-                      <input type="text" name="bhk" value={towerData.bhk} onChange={handleTowerChange} placeholder="e.g. 2BHK, 3BHK" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
-                    </div>
+                    {selectedProjectForSidebar?.project_type !== 'Society' && (
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">BHK</label>
+                        <input type="text" name="bhk" value={towerData.bhk} onChange={handleTowerChange} placeholder="e.g. 2BHK, 3BHK" className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-900 font-semibold shadow-sm" />
+                      </div>
+                    )}
                     <div>
                       <label className="block text-xs font-bold text-slate-500 mb-3 uppercase tracking-widest">Number Series</label>
                       <div className="flex flex-wrap gap-4">
-                        {['1-4', '101-104', '1001-1004'].map((series) => (
-                          <label key={series} className={`flex items-center gap-2 px-4 py-3 border rounded-xl cursor-pointer transition-all ${towerData.numberSeries === series ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}`}>
-                            <input type="radio" name="numberSeries" value={series} checked={towerData.numberSeries === series} onChange={handleTowerChange} className="w-4 h-4 text-blue-600 focus:ring-blue-500" required />
-                            <span className="font-semibold">{series}</span>
-                          </label>
-                        ))}
+                        {(() => {
+                          const n = parseInt(selectedProjectForSidebar?.project_type === 'Society' ? towerData.totalHouses : towerData.totalFloors) || 4;
+                          const options = [`1-${n}`, `101-${100 + n}`, `1001-${1000 + n}`];
+                          return options.map((series) => (
+                            <label key={series} className={`flex items-center gap-2 px-4 py-3 border rounded-xl cursor-pointer transition-all ${towerData.numberSeries === series ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}`}>
+                              <input type="radio" name="numberSeries" value={series} checked={towerData.numberSeries === series} onChange={handleTowerChange} className="w-4 h-4 text-blue-600 focus:ring-blue-500" required />
+                              <span className="font-semibold">{series}</span>
+                            </label>
+                          ));
+                        })()}
                       </div>
                     </div>
 
