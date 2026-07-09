@@ -55,22 +55,26 @@ export default function FloorList({ towerId, towerName, totalFloors, onSelectFlo
 
   return (
     <div className="w-full animation-fade-in">
-      <div className="mb-10 flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <button 
-            onClick={onBack}
-            className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-all shadow-sm"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-blue-600 text-white rounded-xl flex items-center justify-center shadow-md shrink-0">
-                <Building2 className="w-5 h-5" />
-              </div>
-              <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">{towerName} - {unitType}s</h1>
+      <div className="mb-10 flex items-center justify-between bg-white p-6 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/80 relative overflow-hidden">
+        {/* Decorative Background Elements */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-100/40 to-indigo-50/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+        <div className="absolute bottom-0 left-10 w-40 h-40 bg-gradient-to-tr from-emerald-50/30 to-transparent rounded-full blur-2xl translate-y-1/3 pointer-events-none" />
+        
+        <div className="flex items-center gap-6 relative z-10">
+          <div className="flex items-center gap-5">
+            <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-blue-600 text-white rounded-2xl flex items-center justify-center shadow-[0_8px_20px_rgba(79,70,229,0.3)] shrink-0">
+              <Building2 className="w-7 h-7" />
             </div>
-            <p className="text-slate-500 font-medium ml-[52px]">Select a {unitType.toLowerCase()} to manage its construction progress</p>
+            <div className="flex flex-col justify-center">
+              <h1 className="text-3xl font-black tracking-tight text-slate-900 mb-1 flex items-center gap-3">
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
+                  {towerName} - {unitType}s
+                </span>
+              </h1>
+              <p className="text-sm font-semibold text-slate-500">
+                Select a {unitType.toLowerCase()} to manage its construction progress
+              </p>
+            </div>
           </div>
         </div>
       </div>

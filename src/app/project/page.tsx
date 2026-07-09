@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Building2, Plus, LogOut, CheckCircle2, AlertCircle, Users, HardHat, MapPin, Sparkles, ChevronRight, List, X, UploadCloud, Image as ImageIcon, Briefcase, CreditCard, BarChart2, ArrowRightLeft, TrendingUp, Megaphone, Building } from 'lucide-react';
+import { Building2, Plus, LogOut, CheckCircle2, AlertCircle, Users, HardHat, MapPin, Sparkles, ChevronRight, List, X, UploadCloud, Image as ImageIcon, Briefcase, CreditCard, BarChart2, ArrowRightLeft, TrendingUp, Megaphone, Building, Mail, Phone } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import TowerProgress from '@/components/TowerProgress';
 import FloorList from '@/components/FloorList';
+import CustomSelect from '@/components/CustomSelect';
 
 export default function BuilderDashboard() {
   const [activeTab, setActiveTab] = useState<'builder' | 'customer' | 'project' | 'profile'>('project');
@@ -34,8 +35,14 @@ export default function BuilderDashboard() {
   // Project Filters
   const [projectTypeFilter, setProjectTypeFilter] = useState('All');
   const [projectNameSearch, setProjectNameSearch] = useState('');
+  const [projectPage, setProjectPage] = useState(1);
+  const [projectsPerPage, setProjectsPerPage] = useState(10);
+
   const [customerTypeFilter, setCustomerTypeFilter] = useState('All');
   const [customerProjectFilter, setCustomerProjectFilter] = useState('All');
+  const [customerPage, setCustomerPage] = useState(1);
+  const [customersPerPage, setCustomersPerPage] = useState(10);
+
 
   // Show form toggles (now used for Modals)
   const [showBuilderForm, setShowBuilderForm] = useState(false);
@@ -659,39 +666,37 @@ export default function BuilderDashboard() {
 
             {activeProjectSubTab && selectedProjectForSidebar ? (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6 mt-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <button onClick={() => {
-                      if (selectedTowerForProgress) {
-                        setSelectedTowerForProgress(null);
-                      } else {
-                        setActiveProjectSubTab(null);
-                      }
-                    }} className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-slate-700 shadow-sm transition-colors">
-                      <ChevronRight className="w-5 h-5 rotate-180" />
-                    </button>
+                <div className="flex items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60 relative overflow-hidden">
+                  {/* Decorative Background for Project Header */}
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-100/30 to-indigo-50/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+                  
+                  <div className="flex items-center gap-5 relative z-10">
                     <div>
-                      <h2 className="text-2xl font-extrabold text-slate-900 capitalize flex items-center gap-2">
-                        {activeProjectSubTab === 'announcement' ? 'Announcements' : selectedProjectForSidebar.project_name}
+                      <h2 className="text-3xl font-black text-slate-900 capitalize flex items-center gap-3">
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
+                          {activeProjectSubTab === 'announcement' ? 'Announcements' : selectedProjectForSidebar.project_name}
+                        </span>
                       </h2>
-                      <p className="text-sm font-medium text-slate-500 mt-1">
+                      <p className="text-sm font-semibold text-slate-500 mt-1.5 flex items-center gap-2">
                         {activeProjectSubTab === 'announcement' ? 'View announcements for this project' : (
-                          <>Location: <span className="font-semibold text-slate-700">{selectedProjectForSidebar.location || 'N/A'}</span></>
+                          <><MapPin className="w-4 h-4 text-blue-500" /> Location: <span className="font-bold text-slate-700">{selectedProjectForSidebar.location || 'N/A'}</span></>
                         )}
                       </p>
                     </div>
                   </div>
 
-                  {activeProjectSubTab === 'progress' && selectedProjectForSidebar && (
-                    <button onClick={() => setShowTowerForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2 shrink-0">
-                      <Plus className="w-4 h-4" /> {selectedProjectForSidebar?.project_type === 'Society' ? 'Add Section' : 'Add Tower'}
-                    </button>
-                  )}
-                  {activeProjectSubTab === 'announcement' && (
-                    <button onClick={() => setShowAnnouncementForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2 shrink-0">
-                      <Plus className="w-4 h-4" /> Add Announcement
-                    </button>
-                  )}
+                  <div className="relative z-10 flex items-center gap-3">
+                    {activeProjectSubTab === 'progress' && selectedProjectForSidebar && (
+                      <button onClick={() => setShowTowerForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2 shrink-0">
+                        <Plus className="w-4 h-4" /> {selectedProjectForSidebar?.project_type === 'Society' ? 'Add Section' : 'Add Tower'}
+                      </button>
+                    )}
+                    {activeProjectSubTab === 'announcement' && (
+                      <button onClick={() => setShowAnnouncementForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2 shrink-0">
+                        <Plus className="w-4 h-4" /> Add Announcement
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {activeProjectSubTab === 'progress' && selectedTowerForProgress ? (
@@ -801,21 +806,33 @@ export default function BuilderDashboard() {
                 <motion.div
                   key={`header-${activeTab}`}
                   initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
-                  className="mb-12"
+                  className="mb-10 flex items-start gap-6 bg-white p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/80 relative overflow-hidden"
                 >
-                  <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 mb-3 flex items-center gap-3">
-                    <span className="font-extrabold text-3xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
-                    {activeTab === 'builder' ? 'Builder Matrix' : activeTab === 'customer' ? 'Customer' : 'Project'}
-                    </span>
-                    <div className="h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]" />
-                  </h1>
-                  <p className="text-sm font-medium text-slate-500 mt-2">
-                    {activeTab === 'builder'
-                      ? 'Deploy new construction companies to the SuperAdmin ecosystem.'
-                      : activeTab === 'customer'
-                        ? 'Integrate new buyers and assign them directly to active builders.'
-                        : 'Initialize new real estate projects for the global tracker.'}
-                  </p>
+                  {/* Decorative Background Elements */}
+                  <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-100/40 to-indigo-50/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+                  <div className="absolute bottom-0 left-10 w-64 h-64 bg-gradient-to-tr from-emerald-50/50 to-transparent rounded-full blur-3xl translate-y-1/3 pointer-events-none" />
+                  
+                  <div className={`p-4 rounded-2xl flex items-center justify-center shrink-0 border relative z-10 ${
+                    activeTab === 'project' ? 'bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-[0_8px_20px_rgba(79,70,229,0.3)] border-transparent' :
+                    activeTab === 'customer' ? 'bg-gradient-to-br from-blue-500 to-cyan-500 text-white shadow-[0_8px_20px_rgba(59,130,246,0.3)] border-transparent' :
+                    'bg-gradient-to-br from-slate-700 to-slate-900 text-white border-transparent shadow-[0_8px_20px_rgba(15,23,42,0.3)]'
+                  }`}>
+                    {activeTab === 'project' ? <MapPin className="w-8 h-8" /> : 
+                     activeTab === 'customer' ? <Users className="w-8 h-8" /> : 
+                     <HardHat className="w-8 h-8" />}
+                  </div>
+                  <div className="flex flex-col justify-center pt-2 relative z-10">
+                    <h1 className="text-4xl font-black tracking-tight text-slate-900 mb-2 flex items-center gap-3">
+                      {activeTab === 'builder' ? 'Builder Matrix' : activeTab === 'customer' ? 'Customer' : 'Project'}
+                    </h1>
+                    <p className="text-sm font-semibold text-slate-500 max-w-2xl leading-relaxed">
+                      {activeTab === 'builder'
+                        ? 'Deploy new construction companies to the SuperAdmin ecosystem.'
+                        : activeTab === 'customer'
+                          ? 'Integrate new buyers and assign them directly to active builders.'
+                          : 'Initialize new real estate projects for the global tracker and configure tower matrices.'}
+                    </p>
+                  </div>
                 </motion.div>
 
                 {/* Form or List Card */}
@@ -856,79 +873,109 @@ export default function BuilderDashboard() {
 
                     {/* PERSONAL DETAILS / PROFILE VIEW */}
                     {activeTab === 'profile' && (
-                      <div className="max-w-4xl mx-auto">
-                        <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden">
+                      <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="max-w-5xl mx-auto"
+                      >
+                        <div className="bg-white/80 backdrop-blur-3xl rounded-[2.5rem] shadow-[0_20px_80px_rgba(0,0,0,0.07)] border border-white/50 overflow-hidden relative">
+                          {/* Decorative orbs behind */}
+                          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                          
                           {/* Profile Header Cover */}
-                          <div className="h-48 bg-gradient-to-r from-blue-600 to-indigo-700 relative">
-                            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-                            <div className="absolute -bottom-16 left-8">
-                              <div className="w-32 h-32 rounded-full bg-[#2a2a2a] text-white flex items-center justify-center font-medium text-5xl shadow-[0_0_0_6px_white,0_10px_20px_rgba(0,0,0,0.2)]">
-                                {builders[0]?.company_name?.charAt(0) || 'N'}
+                          <div className="h-72 bg-slate-900 relative">
+                            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-indigo-600/40 mix-blend-overlay"></div>
+                            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
+                            
+                            {/* Animated Background Elements in Header */}
+                            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                              <div className="absolute top-10 right-20 w-32 h-32 bg-blue-400/30 rounded-full blur-3xl animate-pulse"></div>
+                              <div className="absolute bottom-10 left-1/2 w-48 h-48 bg-indigo-500/30 rounded-full blur-3xl animate-pulse delay-700"></div>
+                            </div>
+
+                            <div className="absolute -bottom-24 left-10 z-10">
+                              <div className="relative group">
+                                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-full blur-2xl opacity-0 group-hover:opacity-60 transition-opacity duration-500"></div>
+                                <div className="w-48 h-48 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-7xl shadow-[0_0_0_8px_white,0_20px_40px_rgba(0,0,0,0.3)] relative z-10 border border-slate-700/50">
+                                  {builders[0]?.company_name?.charAt(0) || 'N'}
+                                </div>
                               </div>
                             </div>
-                            <div className="absolute bottom-4 right-6 bg-white/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/30 text-white font-semibold text-sm flex items-center gap-2 shadow-sm">
-                              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                            <div className="absolute bottom-6 right-8 bg-white/10 backdrop-blur-xl px-5 py-2.5 rounded-2xl border border-white/20 text-white font-medium text-sm flex items-center gap-2.5 shadow-xl">
+                              <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_rgba(52,211,153,0.8)]"></div>
                               Verified Builder Account
                             </div>
                           </div>
                           
                           {/* Profile Details */}
-                          <div className="pt-20 px-8 pb-10">
-                            <div className="flex justify-between items-start">
+                          <div className="pt-32 px-10 pb-12 relative z-10">
+                            <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-6">
                               <div>
-                                <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">{builders[0]?.company_name || 'Nirman Builders'}</h2>
-                                <p className="text-slate-500 font-medium text-lg mt-1 flex items-center gap-2">
-                                  <MapPin className="w-4 h-4" /> Mumbai, India
+                                <h2 className="text-4xl font-black text-slate-900 tracking-tight">{builders[0]?.company_name || 'Nirman Builders'}</h2>
+                                <p className="text-slate-500 font-medium text-lg mt-2 flex items-center gap-2">
+                                  <MapPin className="w-5 h-5 text-blue-500" /> Mumbai, Maharashtra, India
                                 </p>
                               </div>
-                              <button className="px-6 py-2.5 bg-slate-900 text-white font-semibold rounded-xl hover:bg-blue-600 transition-colors shadow-sm">
+                              <button className="px-8 py-3.5 bg-gradient-to-r from-slate-900 to-slate-800 text-white font-bold rounded-2xl hover:shadow-[0_10px_30px_rgba(15,23,42,0.3)] hover:-translate-y-1 transition-all duration-300 shadow-lg border border-slate-700">
                                 Edit Profile
                               </button>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10">
-                              <div className="space-y-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mt-12">
+                              <div className="space-y-8">
                                 <div>
-                                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Contact Information</h3>
+                                  <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-5 flex items-center gap-3">
+                                    <div className="w-8 h-[2px] bg-blue-500/30"></div>
+                                    Contact Information
+                                  </h3>
                                   <div className="space-y-4">
-                                    <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 transition-colors hover:border-blue-200 group">
-                                      <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                        ✉️
+                                    <div className="flex items-center gap-5 p-5 rounded-3xl bg-white border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] transition-all hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:border-blue-200 group">
+                                      <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                                        <Mail className="w-6 h-6" />
                                       </div>
                                       <div>
-                                        <p className="text-xs font-bold text-slate-500">Email Address</p>
-                                        <p className="font-semibold text-slate-800">{builders[0]?.email || 'contact@nirman.com'}</p>
+                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Email Address</p>
+                                        <p className="font-bold text-slate-800 text-lg">{builders[0]?.email || 'contact@nirman.com'}</p>
                                       </div>
                                     </div>
-                                    <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 transition-colors hover:border-blue-200 group">
-                                      <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                        📞
+                                    <div className="flex items-center gap-5 p-5 rounded-3xl bg-white border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] transition-all hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:border-emerald-200 group">
+                                      <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 group-hover:-rotate-3 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300">
+                                        <Phone className="w-6 h-6" />
                                       </div>
                                       <div>
-                                        <p className="text-xs font-bold text-slate-500">Phone Number</p>
-                                        <p className="font-semibold text-slate-800">{builders[0]?.phone || '+91 98765 43210'}</p>
+                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Phone Number</p>
+                                        <p className="font-bold text-slate-800 text-lg">{builders[0]?.phone || '+91 98765 43210'}</p>
                                       </div>
                                     </div>
                                   </div>
                                 </div>
                               </div>
                               
-                              <div className="space-y-6">
+                              <div className="space-y-8">
                                 <div>
-                                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Account Stats</h3>
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div className="p-5 rounded-2xl bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 relative overflow-hidden group cursor-default">
-                                      <div className="absolute -right-4 -top-4 w-20 h-20 bg-indigo-500/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500"></div>
+                                  <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-5 flex items-center gap-3">
+                                    <div className="w-8 h-[2px] bg-indigo-500/30"></div>
+                                    Account Stats
+                                  </h3>
+                                  <div className="grid grid-cols-2 gap-5">
+                                    <div className="p-6 rounded-3xl bg-gradient-to-br from-indigo-50 to-blue-50/50 border border-indigo-100/50 relative overflow-hidden group cursor-default shadow-[0_4px_20px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-shadow">
+                                      <div className="absolute -right-6 -top-6 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
                                       <div className="relative z-10">
-                                        <p className="text-xs font-extrabold text-indigo-500 uppercase tracking-wider">Total Projects</p>
-                                        <p className="text-4xl font-black text-slate-800 mt-2">{projects.length}</p>
+                                        <div className="w-12 h-12 rounded-xl bg-white/60 flex items-center justify-center mb-5 text-indigo-600 shadow-sm">
+                                          <Building2 className="w-6 h-6" />
+                                        </div>
+                                        <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-1">Total Projects</p>
+                                        <p className="text-5xl font-black text-slate-900 tracking-tight">{projects.length}</p>
                                       </div>
                                     </div>
-                                    <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100 relative overflow-hidden group cursor-default">
-                                      <div className="absolute -right-4 -top-4 w-20 h-20 bg-amber-500/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500"></div>
+                                    <div className="p-6 rounded-3xl bg-gradient-to-br from-amber-50 to-orange-50/50 border border-amber-100/50 relative overflow-hidden group cursor-default shadow-[0_4px_20px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-shadow">
+                                      <div className="absolute -right-6 -top-6 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
                                       <div className="relative z-10">
-                                        <p className="text-xs font-extrabold text-amber-600 uppercase tracking-wider">Total Customers</p>
-                                        <p className="text-4xl font-black text-slate-800 mt-2">{customers.length}</p>
+                                        <div className="w-12 h-12 rounded-xl bg-white/60 flex items-center justify-center mb-5 text-amber-600 shadow-sm">
+                                          <Users className="w-6 h-6" />
+                                        </div>
+                                        <p className="text-xs font-bold text-amber-600 uppercase tracking-widest mb-1">Total Customers</p>
+                                        <p className="text-5xl font-black text-slate-900 tracking-tight">{customers.length}</p>
                                       </div>
                                     </div>
                                   </div>
@@ -936,15 +983,18 @@ export default function BuilderDashboard() {
                               </div>
                             </div>
                             
-                            <div className="mt-10 pt-8 border-t border-slate-100">
-                              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">About the Builder</h3>
-                              <p className="text-slate-600 leading-relaxed font-medium">
+                            <div className="mt-12 pt-10 border-t border-slate-100/80">
+                              <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
+                                <div className="w-8 h-[2px] bg-slate-200"></div>
+                                About the Builder
+                              </h3>
+                              <p className="text-slate-600 leading-loose font-medium text-lg max-w-3xl">
                                 Nirman Builders has been a leading construction and real estate development company for over a decade. We are committed to building sustainable, premium quality homes and commercial spaces that transform city skylines and offer modern living environments for our customers.
                               </p>
                             </div>
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
                     )}
 
                     {/* CUSTOMER LIST VIEW */}
@@ -953,39 +1003,27 @@ export default function BuilderDashboard() {
                         <div className="flex flex-col sm:flex-row gap-4 items-center">
                           <div className="w-full sm:w-64">
                             <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Filter by Type</label>
-                            <div className="relative">
-                              <select
-                                value={customerTypeFilter}
-                                onChange={(e) => setCustomerTypeFilter(e.target.value)}
-                                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
-                              >
-                                <option value="All">All Types</option>
-                                <option value="Flat">Flat</option>
-                                <option value="Commercial">Commercial</option>
-                                <option value="Society">Society</option>
-                              </select>
-                              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                                <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
-                              </div>
-                            </div>
+                            <CustomSelect
+                              value={customerTypeFilter}
+                              onChange={(val) => { setCustomerTypeFilter(val); setCustomerPage(1); }}
+                              options={[
+                                { label: 'All Types', value: 'All' },
+                                { label: 'Flat', value: 'Flat' },
+                                { label: 'Commercial', value: 'Commercial' },
+                                { label: 'Society', value: 'Society' }
+                              ]}
+                            />
                           </div>
                           <div className="w-full sm:w-64">
                             <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Filter by Project</label>
-                            <div className="relative">
-                              <select
-                                value={customerProjectFilter}
-                                onChange={(e) => setCustomerProjectFilter(e.target.value)}
-                                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
-                              >
-                                <option value="All">All Projects</option>
-                                {projects.map(p => (
-                                  <option key={p.id} value={p.id}>{p.project_name}</option>
-                                ))}
-                              </select>
-                              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                                <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
-                              </div>
-                            </div>
+                            <CustomSelect
+                              value={customerProjectFilter}
+                              onChange={(val) => { setCustomerProjectFilter(val); setCustomerPage(1); }}
+                              options={[
+                                { label: 'All Projects', value: 'All' },
+                                ...projects.map(p => ({ label: p.project_name, value: p.id }))
+                              ]}
+                            />
                           </div>
                         </div>
 
@@ -1000,66 +1038,121 @@ export default function BuilderDashboard() {
                               </tr>
                             </thead>
                             <tbody className="text-slate-700">
-                              {customers
-                                .filter(c => customerTypeFilter === 'All' || c.customer_type === customerTypeFilter)
-                                .filter(c => customerProjectFilter === 'All' || c.project_id === customerProjectFilter)
-                                .length === 0 ? (
-                                <tr>
-                                  <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
-                                    No customers match the selected filters.
-                                  </td>
-                                </tr>
-                              ) : (
-                                customers
+                              {(() => {
+                                const filteredCustomers = customers
                                   .filter(c => customerTypeFilter === 'All' || c.customer_type === customerTypeFilter)
-                                  .filter(c => customerProjectFilter === 'All' || c.project_id === customerProjectFilter)
-                                  .map((customer) => (
-                                    <tr 
-                                      key={customer.id} 
-                                      onClick={() => { setSelectedCustomer(customer); setShowCustomerDetailsModal(true); }}
-                                      className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group cursor-pointer"
-                                    >
-                                      <td className="py-5 px-4 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                                        {customer.first_name} {customer.last_name}
-                                        {customer.customer_type && <div className="text-xs font-normal text-slate-500 mt-1">{customer.customer_type}</div>}
-                                      </td>
-                                      <td className="py-5 px-4 text-slate-600 font-medium">
-                                        <div>{customer.email}</div>
-                                        <div className="text-sm text-slate-500 mt-1">{customer.phone || 'N/A'}</div>
-                                      </td>
-                                      <td className="py-5 px-4 text-slate-600 font-medium">
-                                        {customer.tower_name ? (
-                                          <>
-                                            <div className="font-semibold text-slate-800">{customer.tower_name}</div>
-                                            <div className="text-sm text-slate-500 mt-1">
-                                              Floor {customer.floor || '-'} | {customer.customer_type === 'Commercial' ? 'Unit' : 'Flat'} {customer.flat_name || customer.flat_number || '-'}
-                                            </div>
-                                            {(customer.bhk || customer.area_sqft) && (
-                                              <div className="text-xs text-slate-400 mt-1">
-                                                {customer.bhk && <span>{customer.bhk}</span>}
-                                                {customer.bhk && customer.area_sqft && <span> &bull; </span>}
-                                                {customer.area_sqft && <span>{customer.area_sqft} sqft</span>}
-                                              </div>
-                                            )}
-                                          </>
-                                        ) : (
-                                          <span className="text-slate-400 italic">Not Assigned</span>
-                                        )}
-                                      </td>
-                                      <td className="py-5 px-4 text-right">
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); setSelectedCustomer(customer); setShowCustomerDetailsModal(true); }}
-                                          className="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors"
-                                        >
-                                          View
-                                        </button>
+                                  .filter(c => customerProjectFilter === 'All' || c.project_id === customerProjectFilter);
+                                
+                                const currentData = filteredCustomers.slice((customerPage - 1) * customersPerPage, customerPage * customersPerPage);
+
+                                if (filteredCustomers.length === 0) {
+                                  return (
+                                    <tr>
+                                      <td colSpan={4} className="py-12 text-center text-slate-500 font-medium">
+                                        No customers match the selected filters.
                                       </td>
                                     </tr>
-                                  ))
-                              )}
+                                  );
+                                }
+
+                                return currentData.map((customer) => (
+                                  <tr 
+                                    key={customer.id} 
+                                    onClick={() => { setSelectedCustomer(customer); setShowCustomerDetailsModal(true); }}
+                                    className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group cursor-pointer"
+                                  >
+                                    <td className="py-5 px-4 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                                      {customer.first_name} {customer.last_name}
+                                      {customer.customer_type && <div className="text-xs font-normal text-slate-500 mt-1">{customer.customer_type}</div>}
+                                    </td>
+                                    <td className="py-5 px-4 text-slate-600 font-medium">
+                                      <div>{customer.email}</div>
+                                      <div className="text-sm text-slate-500 mt-1">{customer.phone || 'N/A'}</div>
+                                    </td>
+                                    <td className="py-5 px-4 text-slate-600 font-medium">
+                                      {customer.tower_name ? (
+                                        <>
+                                          <div className="font-semibold text-slate-800">{customer.tower_name}</div>
+                                          <div className="text-sm text-slate-500 mt-1">
+                                            Floor {customer.floor || '-'} | {customer.customer_type === 'Commercial' ? 'Unit' : 'Flat'} {customer.flat_name || customer.flat_number || '-'}
+                                          </div>
+                                          {(customer.bhk || customer.area_sqft) && (
+                                            <div className="text-xs text-slate-400 mt-1">
+                                              {customer.bhk && <span>{customer.bhk}</span>}
+                                              {customer.bhk && customer.area_sqft && <span> &bull; </span>}
+                                              {customer.area_sqft && <span>{customer.area_sqft} sqft</span>}
+                                            </div>
+                                          )}
+                                        </>
+                                      ) : (
+                                        <span className="text-slate-400 italic">Not Assigned</span>
+                                      )}
+                                    </td>
+                                    <td className="py-5 px-4 text-right">
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); setSelectedCustomer(customer); setShowCustomerDetailsModal(true); }}
+                                        className="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors"
+                                      >
+                                        View
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ));
+                              })()}
                             </tbody>
                           </table>
                         </div>
+
+                        {/* Pagination Controls */}
+                        {(() => {
+                          const filteredCustomers = customers
+                            .filter(c => customerTypeFilter === 'All' || c.customer_type === customerTypeFilter)
+                            .filter(c => customerProjectFilter === 'All' || c.project_id === customerProjectFilter);
+                          const totalPages = Math.ceil(filteredCustomers.length / customersPerPage);
+                          
+                          if (filteredCustomers.length === 0) return null;
+                          
+                          return (
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-2 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                              <div className="flex items-center gap-3">
+                                <label className="text-sm font-semibold text-slate-600">Show</label>
+                                <CustomSelect
+                                  value={customersPerPage}
+                                  onChange={(val) => { setCustomersPerPage(Number(val)); setCustomerPage(1); }}
+                                  className="w-24"
+                                  dropdownPosition="top"
+                                  options={[
+                                    { label: '10', value: 10 },
+                                    { label: '25', value: 25 },
+                                    { label: '50', value: 50 },
+                                    { label: '100', value: 100 }
+                                  ]}
+                                />
+                                <label className="text-sm font-semibold text-slate-600">entries</label>
+                              </div>
+                              
+                              <div className="flex items-center gap-2">
+                                <button
+                                  disabled={customerPage === 1}
+                                  onClick={() => setCustomerPage(prev => Math.max(1, prev - 1))}
+                                  className="px-4 py-2 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-blue-600 disabled:opacity-50 disabled:hover:text-slate-700 disabled:cursor-not-allowed transition-all shadow-sm"
+                                >
+                                  Prev
+                                </button>
+                                <div className="px-4 py-2 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-xl shadow-sm">
+                                  {customerPage} / {totalPages}
+                                </div>
+                                <button
+                                  disabled={customerPage === totalPages}
+                                  onClick={() => setCustomerPage(prev => Math.min(totalPages, prev + 1))}
+                                  className="px-4 py-2 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-blue-600 disabled:opacity-50 disabled:hover:text-slate-700 disabled:cursor-not-allowed transition-all shadow-sm"
+                                >
+                                  Next
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
                     {/* PROJECT LIST VIEW */}
@@ -1069,33 +1162,30 @@ export default function BuilderDashboard() {
                         <div className="flex flex-col sm:flex-row items-center gap-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
                           <div className="w-full sm:w-1/3">
                             <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-widest">Filter by Type</label>
-                            <select
+                            <CustomSelect
                               value={projectTypeFilter}
-                              onChange={(e) => { setProjectTypeFilter(e.target.value); setProjectNameSearch(''); }}
-                              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm appearance-none cursor-pointer"
-                            >
-                              <option value="All">All Types</option>
-                              <option value="Flat">Flat</option>
-                              <option value="Commercial">Commercial</option>
-                              <option value="Society">Society</option>
-                            </select>
+                              onChange={(val) => { setProjectTypeFilter(val); setProjectNameSearch(''); setProjectPage(1); }}
+                              options={[
+                                { label: 'All Types', value: 'All' },
+                                { label: 'Flat', value: 'Flat' },
+                                { label: 'Commercial', value: 'Commercial' },
+                                { label: 'Society', value: 'Society' }
+                              ]}
+                            />
                           </div>
                           <div className="w-full sm:w-2/3">
                             <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-widest">Filter by Name</label>
-                            <select
+                            <CustomSelect
                               value={projectNameSearch}
-                              onChange={(e) => setProjectNameSearch(e.target.value)}
-                              className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm appearance-none cursor-pointer"
-                            >
-                              <option value="">All Projects</option>
-                              {projects
-                                .filter(p => projectTypeFilter === 'All' || p.project_type === projectTypeFilter)
-                                .map((project) => (
-                                  <option key={project.id} value={project.project_name}>
-                                    {project.project_name}
-                                  </option>
-                                ))}
-                            </select>
+                              onChange={(val) => { setProjectNameSearch(val); setProjectPage(1); }}
+                              placeholder="All Projects"
+                              options={[
+                                { label: 'All Projects', value: '' },
+                                ...projects
+                                  .filter(p => projectTypeFilter === 'All' || p.project_type === projectTypeFilter)
+                                  .map(p => ({ label: p.project_name, value: p.project_name }))
+                              ]}
+                            />
                           </div>
                         </div>
 
@@ -1111,52 +1201,107 @@ export default function BuilderDashboard() {
                               </tr>
                             </thead>
                             <tbody className="text-slate-700">
-                              {projects
-                                .filter(p => projectTypeFilter === 'All' || p.project_type === projectTypeFilter)
-                                .filter(p => projectNameSearch === '' || p.project_name === projectNameSearch)
-                                .length === 0 ? (
-                                <tr>
-                                  <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
-                                    No projects found matching the filters.
-                                  </td>
-                                </tr>
-                              ) : (
-                                projects
+                              {(() => {
+                                const filteredProjects = projects
                                   .filter(p => projectTypeFilter === 'All' || p.project_type === projectTypeFilter)
-                                  .filter(p => projectNameSearch === '' || p.project_name === projectNameSearch)
-                                  .map((project) => (
-                                    <tr 
-                                      key={project.id} 
-                                      onClick={() => { setSelectedProjectForSidebar(project); setActiveProjectSubTab('progress'); }}
-                                      className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group cursor-pointer"
-                                    >
-                                      <td className="py-5 px-4 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                                        {project.project_name}
-                                      </td>
-                                      <td className="py-5 px-4 text-slate-600 font-medium">{project.location || 'N/A'}</td>
-                                      <td className="py-5 px-4 text-slate-600 font-medium">{project.expected_possession || project.expectedPossession || 'N/A'}</td>
-                                      <td className="py-5 px-4 text-right">
-                                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-extrabold tracking-wider border ${project.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
-                                          project.status === 'Under Construction' ? 'bg-amber-50 text-amber-600 border-amber-200' :
-                                            'bg-blue-50 text-blue-600 border-blue-200'
-                                          }`}>
-                                          {project.status || 'Planning'}
-                                        </span>
-                                      </td>
-                                      <td className="py-5 px-4 text-right">
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); setSelectedProjectForSidebar(project); setActiveProjectSubTab('progress'); }}
-                                          className="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors"
-                                        >
-                                          View
-                                        </button>
+                                  .filter(p => projectNameSearch === '' || p.project_name === projectNameSearch);
+                                
+                                const currentData = filteredProjects.slice((projectPage - 1) * projectsPerPage, projectPage * projectsPerPage);
+
+                                if (filteredProjects.length === 0) {
+                                  return (
+                                    <tr>
+                                      <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
+                                        No projects found matching the filters.
                                       </td>
                                     </tr>
-                                  ))
-                              )}
+                                  );
+                                }
+
+                                return currentData.map((project) => (
+                                  <tr 
+                                    key={project.id} 
+                                    onClick={() => { setSelectedProjectForSidebar(project); setActiveProjectSubTab('progress'); }}
+                                    className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group cursor-pointer"
+                                  >
+                                    <td className="py-5 px-4 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                                      {project.project_name}
+                                    </td>
+                                    <td className="py-5 px-4 text-slate-600 font-medium">{project.location || 'N/A'}</td>
+                                    <td className="py-5 px-4 text-slate-600 font-medium">{project.expected_possession || project.expectedPossession || 'N/A'}</td>
+                                    <td className="py-5 px-4 text-right">
+                                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-extrabold tracking-wider border ${project.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                                        project.status === 'Under Construction' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                                          'bg-blue-50 text-blue-600 border-blue-200'
+                                        }`}>
+                                        {project.status || 'Planning'}
+                                      </span>
+                                    </td>
+                                    <td className="py-5 px-4 text-right">
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); setSelectedProjectForSidebar(project); setActiveProjectSubTab('progress'); }}
+                                        className="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors"
+                                      >
+                                        View
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ));
+                              })()}
                             </tbody>
                           </table>
                         </div>
+
+                        {/* Pagination Controls */}
+                        {(() => {
+                          const filteredProjects = projects
+                            .filter(p => projectTypeFilter === 'All' || p.project_type === projectTypeFilter)
+                            .filter(p => projectNameSearch === '' || p.project_name === projectNameSearch);
+                          const totalPages = Math.ceil(filteredProjects.length / projectsPerPage);
+                          
+                          if (filteredProjects.length === 0) return null;
+                          
+                          return (
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-2 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                              <div className="flex items-center gap-3">
+                                <label className="text-sm font-semibold text-slate-600">Show</label>
+                                <CustomSelect
+                                  value={projectsPerPage}
+                                  onChange={(val) => { setProjectsPerPage(Number(val)); setProjectPage(1); }}
+                                  className="w-24"
+                                  dropdownPosition="top"
+                                  options={[
+                                    { label: '10', value: 10 },
+                                    { label: '25', value: 25 },
+                                    { label: '50', value: 50 },
+                                    { label: '100', value: 100 }
+                                  ]}
+                                />
+                                <label className="text-sm font-semibold text-slate-600">entries</label>
+                              </div>
+                              
+                              <div className="flex items-center gap-2">
+                                <button
+                                  disabled={projectPage === 1}
+                                  onClick={() => setProjectPage(prev => Math.max(1, prev - 1))}
+                                  className="px-4 py-2 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-blue-600 disabled:opacity-50 disabled:hover:text-slate-700 disabled:cursor-not-allowed transition-all shadow-sm"
+                                >
+                                  Prev
+                                </button>
+                                <div className="px-4 py-2 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-xl shadow-sm">
+                                  {projectPage} / {totalPages}
+                                </div>
+                                <button
+                                  disabled={projectPage === totalPages}
+                                  onClick={() => setProjectPage(prev => Math.min(totalPages, prev + 1))}
+                                  className="px-4 py-2 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-blue-600 disabled:opacity-50 disabled:hover:text-slate-700 disabled:cursor-not-allowed transition-all shadow-sm"
+                                >
+                                  Next
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>
