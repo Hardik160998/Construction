@@ -87,7 +87,8 @@ export default function BuilderDashboard() {
         setCustomerData(prev => ({
           ...prev,
           bhk: selectedProject.bhk || prev.bhk,
-          areaSqft: selectedProject.area_sqft || prev.areaSqft
+          areaSqft: selectedProject.area_sqft || prev.areaSqft,
+          builderId: selectedProject.builder_id || prev.builderId
         }));
       }
     } else {

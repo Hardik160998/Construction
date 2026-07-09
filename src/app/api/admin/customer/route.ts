@@ -84,9 +84,9 @@ export async function GET(request: Request) {
     );
 
     const [f, s, c] = await Promise.all([
-      supabaseAdmin.from('flate_customer').select('id, first_name, last_name, email, phone, floor, tower_name, flat_name, flat_number, area_sqft, project_id, builder_id, created_at'),
-      supabaseAdmin.from('society_customer').select('id, first_name, last_name, email, phone, floor, tower_name, flat_name, flat_number, area_sqft, project_id, builder_id, created_at'),
-      supabaseAdmin.from('commercial_customer').select('id, first_name, last_name, email, phone, floor, tower_name, flat_name, flat_number, area_sqft, project_id, builder_id, created_at')
+      supabaseAdmin.from('flate_customer').select('id, first_name, last_name, email, phone, floor, tower_name, tower_id, flat_name, flat_number, area_sqft, project_id, builder_id, created_at'),
+      supabaseAdmin.from('society_customer').select('id, first_name, last_name, email, phone, floor, tower_name, tower_id, flat_name, flat_number, area_sqft, project_id, builder_id, created_at'),
+      supabaseAdmin.from('commercial_customer').select('id, first_name, last_name, email, phone, floor, tower_name, tower_id, flat_name, flat_number, area_sqft, project_id, builder_id, created_at')
     ]);
 
     const allCustomers = [
