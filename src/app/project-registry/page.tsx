@@ -59,6 +59,8 @@ export default function BuilderDashboard() {
 
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [showCustomerDetailsModal, setShowCustomerDetailsModal] = useState(false);
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+  const [editProfileData, setEditProfileData] = useState({ company_name: '', email: '', phone: '', about: '' });
   const [selectedProjectForSidebar, setSelectedProjectForSidebar] = useState<any>(null);
   const [activeProjectSubTab, setActiveProjectSubTab] = useState<'progress' | 'announcement' | 'flats' | 'staff' | null>(null);
   const [selectedTowerForProgress, setSelectedTowerForProgress] = useState<any>(null);
@@ -916,7 +918,17 @@ export default function BuilderDashboard() {
                                   <MapPin className="w-5 h-5 text-blue-500" /> Mumbai, Maharashtra, India
                                 </p>
                               </div>
-                              <button className="px-8 py-3.5 bg-gradient-to-r from-slate-900 to-slate-800 text-white font-bold rounded-2xl hover:shadow-[0_10px_30px_rgba(15,23,42,0.3)] hover:-translate-y-1 transition-all duration-300 shadow-lg border border-slate-700">
+                              <button 
+                                onClick={() => {
+                                  setEditProfileData({
+                                    company_name: builders[0]?.company_name || 'Nirman Builders',
+                                    email: builders[0]?.email || 'contact@nirman.com',
+                                    phone: builders[0]?.phone || '+91 98765 43210',
+                                    about: builders[0]?.about || 'Nirman Builders has been a leading construction and real estate development company for over a decade. We are committed to building sustainable, premium quality homes and commercial spaces that transform city skylines and offer modern living environments for our customers.'
+                                  });
+                                  setShowEditProfileModal(true);
+                                }}
+                                className="px-8 py-3.5 bg-gradient-to-r from-slate-900 to-slate-800 text-white font-bold rounded-2xl hover:shadow-[0_10px_30px_rgba(15,23,42,0.3)] hover:-translate-y-1 transition-all duration-300 shadow-lg border border-slate-700">
                                 Edit Profile
                               </button>
                             </div>
@@ -2379,6 +2391,109 @@ export default function BuilderDashboard() {
                     </div>
                   </form>
                 )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* EDIT PROFILE MODAL */}
+      <AnimatePresence>
+        {showEditProfileModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-100"
+            >
+              <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                  <Building className="w-6 h-6 text-blue-600" />
+                  Edit Profile
+                </h3>
+                <button onClick={() => setShowEditProfileModal(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="p-6 sm:p-8 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-700">Company Name</label>
+                    <input 
+                      type="text" 
+                      value={editProfileData.company_name}
+                      onChange={(e) => setEditProfileData({...editProfileData, company_name: e.target.value})}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all font-medium"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-700">Email Address</label>
+                    <input 
+                      type="email" 
+                      value={editProfileData.email}
+                      onChange={(e) => setEditProfileData({...editProfileData, email: e.target.value})}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all font-medium"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-700">Phone Number</label>
+                    <input 
+                      type="tel" 
+                      value={editProfileData.phone}
+                      onChange={(e) => setEditProfileData({...editProfileData, phone: e.target.value})}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all font-medium"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700">About the Builder</label>
+                  <textarea 
+                    value={editProfileData.about}
+                    onChange={(e) => setEditProfileData({...editProfileData, about: e.target.value})}
+                    rows={4}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all font-medium resize-none"
+                  />
+                </div>
+              </div>
+
+              <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
+                <button 
+                  onClick={() => setShowEditProfileModal(false)}
+                  className="px-6 py-2.5 text-slate-600 font-semibold hover:bg-slate-200 rounded-xl transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={() => {
+                    const newBuilder = {
+                      ...builders[0],
+                      company_name: editProfileData.company_name,
+                      email: editProfileData.email,
+                      phone: editProfileData.phone,
+                      about: editProfileData.about
+                    };
+                    const newBuilders = [...builders];
+                    if (newBuilders.length > 0) {
+                      newBuilders[0] = newBuilder;
+                    } else {
+                      newBuilders.push(newBuilder);
+                    }
+                    setBuilders(newBuilders);
+                    setShowEditProfileModal(false);
+                    setSuccess(true);
+                    setTimeout(() => setSuccess(false), 3000);
+                  }}
+                  className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-0.5"
+                >
+                  Save Changes
+                </button>
               </div>
             </motion.div>
           </motion.div>
