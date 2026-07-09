@@ -1,5 +1,5 @@
 import ProjectPage from '../page';
 
-export default function BuilderNetworkPage() {
+export default function ProfilePage() {
   return <ProjectPage />;
 }

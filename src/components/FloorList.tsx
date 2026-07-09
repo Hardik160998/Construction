@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Building2, Layers, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -10,9 +10,28 @@ interface FloorListProps {
   onBack: () => void;
   unitType?: string;
   numberSeries?: string;
+  projectType?: string;
 }
 
-export default function FloorList({ towerId, towerName, totalFloors, onSelectFloor, onBack, unitType = 'Floor', numberSeries }: FloorListProps) {
+export default function FloorList({ towerId, towerName, totalFloors, onSelectFloor, onBack, unitType = 'Floor', numberSeries, projectType = 'Flat' }: FloorListProps) {
+  const [floorProgressMap, setFloorProgressMap] = useState<Record<number, number>>({});
+
+  useEffect(() => {
+    if (!towerId) return;
+    const fetchProgress = async () => {
+      try {
+        const res = await fetch(`/api/admin/bulk-progress?towerId=${towerId}&projectType=${projectType}`);
+        const data = await res.json();
+        if (data.success && data.progressMap) {
+          setFloorProgressMap(data.progressMap);
+        }
+      } catch (err) {
+        console.error('Failed to fetch bulk progress', err);
+      }
+    };
+    fetchProgress();
+  }, [towerId, projectType]);
+
   // Generate array of floor numbers
   let floors: number[] = [];
   if (numberSeries) {
@@ -64,26 +83,32 @@ export default function FloorList({ towerId, towerName, totalFloors, onSelectFlo
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-          {floors.map((floorNum, index) => (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.02 }}
-              key={floorNum}
-            >
-              <button
-                onClick={() => onSelectFloor(floorNum)}
-                className="w-full bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition-all group flex flex-col items-center justify-center gap-3"
+          {floors.map((floorNum, index) => {
+            const percentage = floorProgressMap[floorNum] || 0;
+            return (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 0.02 }}
+                key={floorNum}
               >
-                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                  <Layers className="w-6 h-6" />
-                </div>
-                <span className="font-bold text-slate-700 group-hover:text-blue-700">
-                  {unitType} {floorNum}
-                </span>
-              </button>
-            </motion.div>
-          ))}
+                <button
+                  onClick={() => onSelectFloor(floorNum)}
+                  className="relative w-full bg-white border border-slate-200 rounded-2xl p-6 pt-8 shadow-sm hover:shadow-md hover:border-blue-300 transition-all group flex flex-col items-center justify-center gap-3"
+                >
+                  <div className="absolute top-3 right-3 flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-1 rounded-lg text-xs font-bold border border-emerald-100">
+                    {percentage}%
+                  </div>
+                  <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    <Layers className="w-6 h-6" />
+                  </div>
+                  <span className="font-bold text-slate-700 group-hover:text-blue-700">
+                    {unitType} {floorNum}
+                  </span>
+                </button>
+              </motion.div>
+            );
+          })}
         </div>
       )}
     </div>

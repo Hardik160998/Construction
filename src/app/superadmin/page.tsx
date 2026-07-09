@@ -18,6 +18,7 @@ export default function AdminDashboard() {
   const [customers, setCustomers] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [towers, setTowers] = useState<any[]>([]);
+  const [towerProgressMap, setTowerProgressMap] = useState<Record<string, number>>({});
   const [inquiries, setInquiries] = useState<any[]>([]);
 
   // Show form toggles (now used for Modals)
@@ -81,9 +82,9 @@ export default function AdminDashboard() {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get('tab');
       
-      if (pathname.includes('/customer-network') || tab === 'customer') {
+      if (pathname.includes('/customer') || tab === 'customer') {
         setActiveTab('customer');
-      } else if (pathname.includes('/project-registry') || tab === 'project') {
+      } else if (pathname.includes('/project') || tab === 'project') {
         setActiveTab('project');
       } else if (pathname.includes('/inquiry') || tab === 'inquiry') {
         setActiveTab('inquiry');
@@ -143,7 +144,25 @@ export default function AdminDashboard() {
     try {
       const res = await fetch(`/api/admin/tower?projectId=${projectId}`);
       const data = await res.json();
-      if (data.success) setTowers(data.towers || []);
+      if (data.success) {
+        const fetchedTowers = data.towers || [];
+        setTowers(fetchedTowers);
+        
+        if (fetchedTowers.length > 0) {
+          const projectType = fetchedTowers[0].project_type || selectedProjectForSidebar?.project_type || 'Flat';
+          const bulkRes = await fetch('/api/admin/bulk-progress', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ towers: fetchedTowers, projectType })
+          });
+          const bulkData = await bulkRes.json();
+          if (bulkData.success) {
+            setTowerProgressMap(bulkData.towerProgressMap || {});
+          }
+        } else {
+          setTowerProgressMap({});
+        }
+      }
     } catch (err) {
       console.error('Failed to load towers', err);
     }
@@ -363,8 +382,8 @@ export default function AdminDashboard() {
 
   const menuItems = [
     { id: 'builder', label: 'Builder Matrix', icon: HardHat },
-    { id: 'customer', label: 'Customer Network', icon: Users },
-    { id: 'project', label: 'Project Registry', icon: MapPin },
+    { id: 'customer', label: 'Customer', icon: Users },
+    { id: 'project', label: 'Project', icon: MapPin },
     { id: 'inquiry', label: 'Inquiries', icon: MessageSquare }
   ] as const;
 
@@ -378,8 +397,8 @@ export default function AdminDashboard() {
     setActiveProjectSubTab(null);
     
     // Sync with URL
-    const newPath = tabId === 'customer' ? '/superadmin/customer-network' 
-                  : tabId === 'project' ? '/superadmin/project-registry' 
+    const newPath = tabId === 'customer' ? '/superadmin/customer' 
+                  : tabId === 'project' ? '/superadmin/project' 
                   : tabId === 'inquiry' ? '/superadmin/inquiry'
                   : '/superadmin/builder-matrix';
     window.history.pushState(null, '', newPath);
@@ -432,15 +451,15 @@ export default function AdminDashboard() {
                 <div key={item.id} className="flex flex-col">
                   <button 
                     onClick={() => handleTabChange(item.id)}
-                    className={`group relative flex items-center justify-between w-full px-4 py-4 rounded-2xl font-semibold transition-all duration-300 overflow-hidden ${
+                    className={`group relative flex items-center justify-between w-full px-5 py-4 rounded-2xl font-semibold transition-all duration-300 ${
                       isActive 
-                        ? 'text-blue-700 shadow-[0_0_20px_rgba(59,130,246,0.1)] border-blue-200/50' 
-                        : 'text-slate-600 hover:text-slate-900 border-transparent hover:bg-slate-200/40'
+                        ? 'text-blue-700 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.08)] border-slate-200' 
+                        : 'text-slate-600 hover:text-slate-900 border-transparent hover:bg-slate-100'
                     } border`}
                   >
                     {/* Active Background Glow */}
                     {isActive && (
-                      <motion.div layoutId="activeTab" className="absolute inset-0 bg-gradient-to-r from-blue-50 to-violet-50 rounded-2xl" />
+                      <motion.div layoutId="activeTab" className="absolute inset-0 bg-blue-50/40 rounded-2xl" />
                     )}
                     
                     <div className="relative z-10 flex items-center gap-4 whitespace-nowrap">
@@ -524,7 +543,11 @@ export default function AdminDashboard() {
                   {activeProjectSubTab === 'progress' && towers.length > 0 ? (
                     <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                       {towers.map(tower => (
-                        <div key={tower.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow group flex flex-col justify-between">
+                        <Link 
+                          key={tower.id} 
+                          href={`/superadmin/tower/${encodeURIComponent(tower.tower_name)}?id=${tower.id}`}
+                          className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow group flex items-center justify-between cursor-pointer hover:border-blue-300 block"
+                        >
                           <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                               <Building className="w-6 h-6" />
@@ -534,10 +557,16 @@ export default function AdminDashboard() {
                               <p className="text-sm font-semibold text-slate-500">{tower.total_floors} Floors</p>
                             </div>
                           </div>
-                          <Link href={`/superadmin/tower/${encodeURIComponent(tower.tower_name)}?id=${tower.id}`} className="mt-6 w-full block text-center py-2.5 bg-slate-50 text-slate-700 font-bold rounded-xl hover:bg-slate-100 transition-colors text-sm">
-                            Manage Progress
-                          </Link>
-                        </div>
+
+                          <div className="flex flex-col items-end gap-1">
+                            <span className="text-2xl font-black text-emerald-600 tracking-tight">
+                              {towerProgressMap[tower.id] || 0}%
+                            </span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                              Completed
+                            </span>
+                          </div>
+                        </Link>
                       ))}
                     </div>
                   ) : activeProjectSubTab === 'announcement' && announcements.length > 0 ? (
@@ -600,7 +629,9 @@ export default function AdminDashboard() {
                 className="mb-12"
               >
                 <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 mb-3 flex items-center gap-3">
-                  {activeTab === 'builder' ? 'Builder Matrix' : activeTab === 'customer' ? 'Customer Network' : activeTab === 'inquiry' ? 'Inquiries' : 'Project Registry'}
+                  <span className="font-extrabold text-3xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
+                    {activeTab === 'builder' ? 'Builder Matrix' : activeTab === 'customer' ? 'Customer' : activeTab === 'inquiry' ? 'Inquiries' : 'Project'}
+                  </span>
                   <div className="h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]" />
                 </h1>
                 <p className="text-sm font-medium text-slate-500 mt-2">

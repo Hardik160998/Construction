@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     };
     if (totalFloors) payload.total_floors = parseInt(totalFloors, 10);
     if (totalHouses) payload.total_houses = parseInt(totalHouses, 10);
-    if (numberSeries) payload.number_series = numberSeries;
+    payload.number_series = numberSeries ? numberSeries : null;
     if (bhk) payload.bhk = bhk;
     if (towerType && tableName === 'commercial_tower') payload.tower_type = towerType;
     if (unitTypes && tableName === 'commercial_tower') payload.unit_types = unitTypes;

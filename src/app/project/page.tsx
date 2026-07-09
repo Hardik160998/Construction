@@ -13,7 +13,7 @@ export default function BuilderDashboard() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
-      if (path.includes('/customer-network')) setActiveTab('customer');
+      if (path.includes('/customer')) setActiveTab('customer');
       else if (path.includes('/builder-network')) setActiveTab('builder');
       else if (path.includes('/profile')) setActiveTab('profile');
     }
@@ -212,7 +212,7 @@ export default function BuilderDashboard() {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get('tab');
 
-      if (pathname.includes('/customer-network') || tab === 'customer') {
+      if (pathname.includes('/customer') || tab === 'customer') {
         setActiveTab('customer');
       } else if (pathname.includes('/builder-network') || tab === 'builder') {
         setActiveTab('builder');
@@ -522,10 +522,10 @@ export default function BuilderDashboard() {
     setActiveProjectSubTab(null);
 
     // Sync with URL
-    const newPath = tabId === 'customer' ? '/customer-network'
-      : tabId === 'builder' ? '/project-registry/builder-network'
-      : tabId === 'profile' ? '/project-registry/profile'
-        : '/project-registry';
+    const newPath = tabId === 'customer' ? '/customer'
+      : tabId === 'builder' ? '/project/builder-network'
+      : tabId === 'profile' ? '/project/profile'
+        : '/project';
     window.history.pushState(null, '', newPath);
   };
 
@@ -806,7 +806,7 @@ export default function BuilderDashboard() {
                   <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 mb-3 flex items-center gap-3">
                     <span className="font-extrabold text-3xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
                     {activeTab === 'builder' ? 'Builder Matrix' : activeTab === 'customer' ? 'Customer' : 'Project'}
-                </span>
+                    </span>
                     <div className="h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]" />
                   </h1>
                   <p className="text-sm font-medium text-slate-500 mt-2">
