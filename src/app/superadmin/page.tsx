@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Building2, Plus, LogOut, CheckCircle2, AlertCircle, Users, HardHat, MapPin, Sparkles, ChevronRight, List, X, UploadCloud, Image as ImageIcon, Briefcase, CreditCard, BarChart2, ArrowRightLeft, TrendingUp, Megaphone, Building } from 'lucide-react';
+import { Building2, Plus, LogOut, CheckCircle2, AlertCircle, Users, HardHat, MapPin, Sparkles, ChevronRight, List, X, UploadCloud, Image as ImageIcon, Briefcase, CreditCard, BarChart2, ArrowRightLeft, TrendingUp, Megaphone, Building, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'builder' | 'customer' | 'project'>('builder');
+  const [activeTab, setActiveTab] = useState<'builder' | 'customer' | 'project' | 'inquiry'>('builder');
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -18,6 +18,7 @@ export default function AdminDashboard() {
   const [customers, setCustomers] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [towers, setTowers] = useState<any[]>([]);
+  const [inquiries, setInquiries] = useState<any[]>([]);
 
   // Show form toggles (now used for Modals)
   const [showBuilderForm, setShowBuilderForm] = useState(false);
@@ -31,6 +32,9 @@ export default function AdminDashboard() {
   
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<any>(null);
   const [showAnnouncementDetailsModal, setShowAnnouncementDetailsModal] = useState(false);
+  
+  const [selectedInquiry, setSelectedInquiry] = useState<any>(null);
+  const [showInquiryDetailsModal, setShowInquiryDetailsModal] = useState(false);
   
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [showCustomerDetailsModal, setShowCustomerDetailsModal] = useState(false);
@@ -70,6 +74,7 @@ export default function AdminDashboard() {
     fetchBuilders();
     fetchCustomers();
     fetchProjects();
+    fetchInquiries();
 
     const handlePopState = () => {
       const pathname = window.location.pathname;
@@ -80,6 +85,8 @@ export default function AdminDashboard() {
         setActiveTab('customer');
       } else if (pathname.includes('/project-registry') || tab === 'project') {
         setActiveTab('project');
+      } else if (pathname.includes('/inquiry') || tab === 'inquiry') {
+        setActiveTab('inquiry');
       } else {
         setActiveTab('builder');
       }
@@ -119,6 +126,16 @@ export default function AdminDashboard() {
       if (data.success) setProjects(data.projects);
     } catch (err) {
       console.error('Failed to load projects', err);
+    }
+  };
+
+  const fetchInquiries = async () => {
+    try {
+      const res = await fetch('/api/admin/contact');
+      const data = await res.json();
+      if (data.success) setInquiries(data.contacts || []);
+    } catch (err) {
+      console.error('Failed to load inquiries', err);
     }
   };
 
@@ -347,10 +364,11 @@ export default function AdminDashboard() {
   const menuItems = [
     { id: 'builder', label: 'Builder Matrix', icon: HardHat },
     { id: 'customer', label: 'Customer Network', icon: Users },
-    { id: 'project', label: 'Project Registry', icon: MapPin }
+    { id: 'project', label: 'Project Registry', icon: MapPin },
+    { id: 'inquiry', label: 'Inquiries', icon: MessageSquare }
   ] as const;
 
-  const handleTabChange = (tabId: 'builder' | 'customer' | 'project') => {
+  const handleTabChange = (tabId: 'builder' | 'customer' | 'project' | 'inquiry') => {
     setActiveTab(tabId);
     setError('');
     setSuccess(false);
@@ -362,6 +380,7 @@ export default function AdminDashboard() {
     // Sync with URL
     const newPath = tabId === 'customer' ? '/superadmin/customer-network' 
                   : tabId === 'project' ? '/superadmin/project-registry' 
+                  : tabId === 'inquiry' ? '/superadmin/inquiry'
                   : '/superadmin/builder-matrix';
     window.history.pushState(null, '', newPath);
   };
@@ -581,7 +600,7 @@ export default function AdminDashboard() {
                 className="mb-12"
               >
                 <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 mb-3 flex items-center gap-3">
-                  {activeTab === 'builder' ? 'Builder Matrix' : activeTab === 'customer' ? 'Customer Network' : 'Project Registry'}
+                  {activeTab === 'builder' ? 'Builder Matrix' : activeTab === 'customer' ? 'Customer Network' : activeTab === 'inquiry' ? 'Inquiries' : 'Project Registry'}
                   <div className="h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]" />
                 </h1>
                 <p className="text-sm font-medium text-slate-500 mt-2">
@@ -589,7 +608,9 @@ export default function AdminDashboard() {
                     ? 'Deploy new construction companies to the SuperAdmin ecosystem.' 
                     : activeTab === 'customer' 
                       ? 'Integrate new buyers and assign them directly to active builders.'
-                      : 'Initialize new real estate projects for the global tracker.'}
+                      : activeTab === 'inquiry'
+                        ? 'View and manage contact inquiries from the website.'
+                        : 'Initialize new real estate projects for the global tracker.'}
                 </p>
               </motion.div>
 
@@ -606,7 +627,7 @@ export default function AdminDashboard() {
                        <List className="w-5 h-5" />
                      </div>
                      <h2 className="font-bold text-xl text-slate-800">
-                       {activeTab === 'builder' ? 'Active Builders' : activeTab === 'customer' ? 'Active Customers' : 'Active Projects'}
+                       {activeTab === 'builder' ? 'Active Builders' : activeTab === 'customer' ? 'Active Customers' : activeTab === 'inquiry' ? 'Recent Inquiries' : 'Active Projects'}
                      </h2>
                    </div>
                    
@@ -753,6 +774,49 @@ export default function AdminDashboard() {
                                 <td className="py-5 px-4 text-right">
                                   <button 
                                     onClick={() => { setSelectedProjectForSidebar(project); setActiveProjectSubTab('progress'); }}
+                                    className="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors"
+                                  >
+                                    View
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {/* INQUIRY LIST VIEW */}
+                  {activeTab === 'inquiry' && (
+                    <div className="overflow-x-auto -mx-4 sm:-mx-0">
+                      <table className="w-full text-left border-collapse min-w-[600px]">
+                        <thead>
+                          <tr className="border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
+                            <th className="pb-4 px-4">Date</th>
+                            <th className="pb-4 px-4">Name</th>
+                            <th className="pb-4 px-4">Email</th>
+                            <th className="pb-4 px-4">Company</th>
+                            <th className="pb-4 px-4 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="text-slate-700">
+                          {inquiries.length === 0 ? (
+                            <tr>
+                              <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
+                                No inquiries found.
+                              </td>
+                            </tr>
+                          ) : (
+                            inquiries.map((inq) => (
+                              <tr key={inq.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group">
+                                <td className="py-5 px-4 font-mono text-xs text-slate-500">{new Date(inq.created_at).toLocaleDateString()}</td>
+                                <td className="py-5 px-4 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{inq.first_name} {inq.last_name}</td>
+                                <td className="py-5 px-4 text-slate-600 font-medium">{inq.email}</td>
+                                <td className="py-5 px-4 text-slate-600 font-medium">{inq.company_name || 'N/A'}</td>
+                                <td className="py-5 px-4 text-right">
+                                  <button 
+                                    onClick={() => { setSelectedInquiry(inq); setShowInquiryDetailsModal(true); }}
                                     className="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors"
                                   >
                                     View
@@ -1275,6 +1339,59 @@ export default function AdminDashboard() {
                 <h3 className="text-2xl font-bold text-slate-900 mb-4 leading-tight">{selectedAnnouncement.title}</h3>
                 <div className="prose prose-slate prose-sm max-w-none">
                   <p className="text-slate-600 whitespace-pre-wrap leading-relaxed text-[15px]">{selectedAnnouncement.message}</p>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* Inquiry Details Modal */}
+      <AnimatePresence>
+        {showInquiryDetailsModal && selectedInquiry && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 sm:p-8"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 10 }} transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
+              className="bg-white w-full max-w-lg rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden flex flex-col"
+            >
+              <div className="px-8 py-6 border-b border-slate-100 bg-slate-50 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-4">
+                  <div className="p-2.5 bg-indigo-100 text-indigo-600 rounded-xl">
+                    <MessageSquare className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900">Inquiry Details</h2>
+                    <p className="text-sm font-medium text-slate-500 mt-1">
+                      {new Date(selectedInquiry.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <button onClick={() => setShowInquiryDetailsModal(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-8 overflow-y-auto">
+                <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
+                  <div>
+                    <span className="block text-slate-400 font-bold uppercase tracking-wider text-xs mb-1">Name</span>
+                    <span className="font-semibold text-slate-800">{selectedInquiry.first_name} {selectedInquiry.last_name}</span>
+                  </div>
+                  <div>
+                    <span className="block text-slate-400 font-bold uppercase tracking-wider text-xs mb-1">Company</span>
+                    <span className="font-semibold text-slate-800">{selectedInquiry.company_name || 'N/A'}</span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="block text-slate-400 font-bold uppercase tracking-wider text-xs mb-1">Email</span>
+                    <span className="font-semibold text-slate-800">{selectedInquiry.email}</span>
+                  </div>
+                </div>
+                
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Message</h3>
+                <div className="prose prose-slate prose-sm max-w-none bg-slate-50 p-4 rounded-xl border border-slate-100">
+                  <p className="text-slate-700 whitespace-pre-wrap leading-relaxed text-[15px] m-0">{selectedInquiry.message}</p>
                 </div>
               </div>
             </motion.div>
