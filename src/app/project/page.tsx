@@ -1,17 +1,159 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Building2, Plus, LogOut, CheckCircle2, AlertCircle, Users, HardHat, MapPin, Sparkles, ChevronRight, List, X, UploadCloud, Image as ImageIcon, Briefcase, CreditCard, BarChart2, ArrowRightLeft, TrendingUp, Megaphone, Building, Mail, Phone } from 'lucide-react';
+import { Building2, Plus, LogOut, CheckCircle2, AlertCircle, Users, HardHat, MapPin, Sparkles, ChevronRight, List, X, UploadCloud, Image as ImageIcon, Briefcase, CreditCard, BarChart2, ArrowRightLeft, TrendingUp, Megaphone, Building, Mail, Phone, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import TowerProgress from '@/components/TowerProgress';
 import FloorList from '@/components/FloorList';
 import CustomSelect from '@/components/CustomSelect';
 
+const MainAreaSkeleton = () => (
+  <div className="w-full max-w-none space-y-6">
+    {/* Header Skeleton */}
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-8 rounded-[2rem] border border-slate-100/80">
+      <div className="flex items-center gap-6">
+        <div className="w-16 h-16 bg-slate-200 rounded-2xl animate-pulse"></div>
+        <div>
+          <div className="h-8 w-48 bg-slate-200 rounded-md animate-pulse mb-3"></div>
+          <div className="h-4 w-72 bg-slate-200 rounded-md animate-pulse"></div>
+        </div>
+      </div>
+    </div>
+
+    {/* Table Area Skeleton */}
+    <div className="bg-white/80 rounded-3xl border border-slate-200/80 p-8 mt-6">
+      <div className="flex flex-col sm:flex-row justify-between gap-4 mb-8">
+        <div className="flex items-center gap-4">
+          <div className="h-10 w-10 bg-slate-200 rounded-xl animate-pulse"></div>
+          <div className="h-8 w-48 bg-slate-200 rounded-md animate-pulse"></div>
+        </div>
+        <div className="h-10 w-32 bg-slate-200 rounded-xl animate-pulse"></div>
+      </div>
+
+      <div className="flex space-x-6 border-b border-slate-200 pb-4 mb-6">
+        <div className="h-10 w-48 bg-slate-200 rounded-lg animate-pulse"></div>
+        <div className="h-10 w-48 bg-slate-200 rounded-lg animate-pulse"></div>
+      </div>
+
+      <div className="space-y-4">
+        {[1, 2, 3, 4, 5].map((row) => (
+          <div key={row} className="grid grid-cols-5 gap-4 py-5 border-b border-slate-50 items-center">
+            <div className="h-5 w-32 bg-slate-200 rounded-md animate-pulse"></div>
+            <div className="h-5 w-24 bg-slate-200 rounded-md animate-pulse"></div>
+            <div className="h-5 w-28 bg-slate-200 rounded-md animate-pulse"></div>
+            <div className="h-6 w-20 bg-slate-200 rounded-full animate-pulse"></div>
+            <div className="h-8 w-16 bg-slate-200 rounded-lg animate-pulse"></div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+const SubTabSkeleton = () => (
+  <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    {[1, 2, 3, 4, 5, 6].map((i) => (
+      <div key={i} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between h-40">
+        <div>
+          <div className="flex justify-between items-start mb-4">
+            <div className="h-6 w-24 bg-slate-200 rounded-xl animate-pulse"></div>
+            <div className="h-4 w-16 bg-slate-200 rounded-md animate-pulse"></div>
+          </div>
+          <div className="h-6 w-3/4 bg-slate-200 rounded-md animate-pulse mb-3"></div>
+          <div className="space-y-2">
+            <div className="h-4 w-full bg-slate-100 rounded-md animate-pulse"></div>
+            <div className="h-4 w-2/3 bg-slate-100 rounded-md animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+const TowersGridSkeleton = () => (
+  <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    {[1, 2, 3, 4, 5, 6].map((i) => (
+      <div key={i} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center justify-between h-[104px]">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-slate-200 rounded-xl animate-pulse"></div>
+          <div className="flex flex-col gap-2">
+            <div className="h-6 w-32 bg-slate-200 rounded-md animate-pulse"></div>
+            <div className="h-4 w-24 bg-slate-200 rounded-md animate-pulse"></div>
+          </div>
+        </div>
+        <div className="flex flex-col items-end gap-2">
+          <div className="h-8 w-16 bg-slate-200 rounded-md animate-pulse"></div>
+          <div className="h-3 w-12 bg-slate-200 rounded-md animate-pulse"></div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+const FloorListSkeleton = () => (
+  <div className="w-full animation-fade-in">
+    <div className="mb-10 flex items-center justify-between bg-white p-6 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/80 relative overflow-hidden">
+      <div className="flex items-center gap-6 relative z-10">
+        <div className="flex items-center gap-5">
+          <div className="w-14 h-14 bg-slate-200 rounded-2xl animate-pulse"></div>
+          <div className="flex flex-col justify-center gap-2">
+            <div className="h-8 w-48 bg-slate-200 rounded-md animate-pulse"></div>
+            <div className="h-4 w-64 bg-slate-200 rounded-md animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((i) => (
+        <div key={i} className="relative w-full bg-white border border-slate-200 rounded-2xl p-6 pt-8 h-32 animate-pulse flex flex-col items-center justify-center gap-3">
+          <div className="w-12 h-12 bg-slate-200 rounded-full"></div>
+          <div className="h-4 w-16 bg-slate-200 rounded-md"></div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const TowerProgressSkeleton = () => (
+  <div className="w-full animation-fade-in">
+    <div className="mb-10 flex items-center justify-between bg-white p-6 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/80">
+      <div className="flex items-center gap-5">
+        <div className="w-14 h-14 bg-slate-200 rounded-2xl animate-pulse"></div>
+        <div className="flex flex-col justify-center gap-2">
+          <div className="h-8 w-48 bg-slate-200 rounded-md animate-pulse"></div>
+          <div className="h-4 w-64 bg-slate-200 rounded-md animate-pulse"></div>
+        </div>
+      </div>
+    </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <div key={i} className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between animate-pulse h-48">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-slate-200 rounded-xl"></div>
+                <div className="h-6 w-32 bg-slate-200 rounded-md"></div>
+              </div>
+              <div className="h-6 w-20 bg-slate-200 rounded-lg"></div>
+            </div>
+          </div>
+          <div className="mt-auto">
+            <div className="h-10 w-full bg-slate-100 rounded-xl"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 export default function BuilderDashboard() {
   const [activeTab, setActiveTab] = useState<'builder' | 'customer' | 'project' | 'profile'>('project');
+  const [isDataLoading, setIsDataLoading] = useState(true);
+  const [hasHydrated, setHasHydrated] = useState(false);
 
   useEffect(() => {
+    setHasHydrated(true);
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
       if (path.includes('/customer')) setActiveTab('customer');
@@ -211,15 +353,67 @@ export default function BuilderDashboard() {
     }
   }, [selectedProjectForSidebar]);
 
+  // Sync tower object once towers are loaded based on URL param
   useEffect(() => {
-    fetchBuilders();
-    fetchCustomers();
-    fetchProjects();
+    if (towers.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const urlTowerId = params.get('towerId');
+      if (urlTowerId) {
+        const tower = towers.find(t => t.id === urlTowerId || t._id === urlTowerId);
+        if (tower) {
+          setSelectedTowerForProgress(tower);
+        }
+      }
+    }
+  }, [towers]);
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      setIsDataLoading(true);
+      const [buildersRes, customersRes, projectsRes] = await Promise.all([
+        fetchBuilders(),
+        fetchCustomers(),
+        fetchProjects()
+      ]);
+      
+      // Handle deep linking for Project Details on initial load
+      const params = new URLSearchParams(window.location.search);
+      const projectId = params.get('projectId');
+      const subTab = params.get('subTab') as any;
+      const towerId = params.get('towerId');
+      const floor = params.get('floor');
+      
+      if (projectId) {
+        try {
+          const res = await fetch('/api/admin/project');
+          const data = await res.json();
+          if (data.success) {
+            const project = data.projects.find((p: any) => p.id === projectId || p._id === projectId);
+            if (project) {
+              setSelectedProjectForSidebar(project);
+              setActiveProjectSubTab(subTab || 'progress');
+              if (floor) {
+                setSelectedFloorForProgress(Number(floor));
+              }
+            }
+          }
+        } catch (e) {}
+      }
+
+      // Slightly delay hiding skeleton so user can see it
+      setTimeout(() => setIsDataLoading(false), 500);
+    };
+
+    fetchInitialData();
 
     const handlePopState = () => {
       const pathname = window.location.pathname;
       const params = new URLSearchParams(window.location.search);
       const tab = params.get('tab');
+      const projectId = params.get('projectId');
+      const subTab = params.get('subTab') as any;
+      const towerId = params.get('towerId');
+      const floor = params.get('floor');
 
       if (pathname.includes('/customer') || tab === 'customer') {
         setActiveTab('customer');
@@ -227,6 +421,26 @@ export default function BuilderDashboard() {
         setActiveTab('builder');
       } else {
         setActiveTab('project');
+        
+        // Restore nested state from URL
+        if (projectId) {
+          setSelectedProjectForSidebar({ id: projectId, _id: projectId, project_name: 'Loading...' }); 
+          setActiveProjectSubTab(subTab || 'progress');
+          
+          if (!towerId) {
+            setSelectedTowerForProgress(null);
+            setSelectedFloorForProgress(null);
+          } else if (!floor) {
+             setSelectedFloorForProgress(null);
+          } else {
+             setSelectedFloorForProgress(Number(floor));
+          }
+        } else {
+          setSelectedProjectForSidebar(null);
+          setActiveProjectSubTab(null);
+          setSelectedTowerForProgress(null);
+          setSelectedFloorForProgress(null);
+        }
       }
     };
 
@@ -274,7 +488,7 @@ export default function BuilderDashboard() {
       if (data.success) {
         const fetchedTowers = data.towers || [];
         setTowers(fetchedTowers);
-        
+
         if (fetchedTowers.length > 0) {
           const projectType = fetchedTowers[0].project_type || selectedProjectForSidebar?.project_type || 'Flat';
           const bulkRes = await fetch('/api/admin/bulk-progress', {
@@ -522,6 +736,7 @@ export default function BuilderDashboard() {
   ] as const;
 
   const handleTabChange = (tabId: 'builder' | 'customer' | 'project' | 'profile') => {
+    setIsDataLoading(true);
     setActiveTab(tabId);
     setError('');
     setSuccess(false);
@@ -529,6 +744,8 @@ export default function BuilderDashboard() {
     setShowCustomerForm(false);
     setShowProjectForm(false);
     setActiveProjectSubTab(null);
+    setSelectedProjectForSidebar(null);
+    setSelectedTowerForProgress(null);
 
     // Sync with URL
     const newPath = tabId === 'customer' ? '/customer'
@@ -536,6 +753,88 @@ export default function BuilderDashboard() {
       : tabId === 'profile' ? '/project/profile'
         : '/project';
     window.history.pushState(null, '', newPath);
+
+    // Remove shimmer after a short delay
+    setTimeout(() => {
+      setIsDataLoading(false);
+    }, 400);
+  };
+
+  const handleSubTabChange = (subTab: 'progress' | 'announcement' | 'staff') => {
+    setIsDataLoading(true);
+    setActiveProjectSubTab(subTab);
+    if (subTab === 'progress') {
+      setSelectedTowerForProgress(null);
+    }
+    
+    // Sync with URL
+    if (selectedProjectForSidebar) {
+      const projectId = selectedProjectForSidebar.id || selectedProjectForSidebar._id;
+      window.history.pushState(null, '', `/project?projectId=${projectId}&subTab=${subTab}`);
+    }
+
+    setTimeout(() => {
+      setIsDataLoading(false);
+    }, 400);
+  };
+
+  const openProjectDetails = (project: any) => {
+    setIsDataLoading(true);
+    setSelectedProjectForSidebar(project);
+    setActiveProjectSubTab('progress');
+    const projectId = project.id || project._id;
+    window.history.pushState(null, '', `/project?projectId=${projectId}&subTab=progress`);
+    setTimeout(() => {
+      setIsDataLoading(false);
+    }, 400);
+  };
+
+  const closeProjectDetails = () => {
+    setSelectedProjectForSidebar(null);
+    setActiveProjectSubTab(null);
+    setSelectedTowerForProgress(null);
+    setSelectedFloorForProgress(null);
+    window.history.pushState(null, '', '/project');
+  };
+
+  const handleTowerSelect = (tower: any) => {
+    setSelectedTowerForProgress(tower);
+    const url = new URL(window.location.href);
+    url.searchParams.set('towerId', tower.id || tower._id);
+    window.history.pushState(null, '', url.toString());
+  };
+
+  const handleFloorSelect = (floor: number) => {
+    setSelectedFloorForProgress(floor);
+    const url = new URL(window.location.href);
+    url.searchParams.set('floor', floor.toString());
+    window.history.pushState(null, '', url.toString());
+  };
+
+  const handleBackToTowers = () => {
+    setSelectedTowerForProgress(null);
+    setSelectedFloorForProgress(null);
+    const url = new URL(window.location.href);
+    url.searchParams.delete('towerId');
+    url.searchParams.delete('floor');
+    window.history.pushState(null, '', url.toString());
+  };
+
+  const handleBackToFloors = () => {
+    setSelectedFloorForProgress(null);
+    const url = new URL(window.location.href);
+    url.searchParams.delete('floor');
+    window.history.pushState(null, '', url.toString());
+  };
+
+  const handleSmartBack = () => {
+    if (selectedFloorForProgress) {
+      handleBackToFloors();
+    } else if (selectedTowerForProgress) {
+      handleBackToTowers();
+    } else {
+      closeProjectDetails();
+    }
   };
 
   return (
@@ -619,22 +918,21 @@ export default function BuilderDashboard() {
                             <Briefcase className="w-[18px] h-[18px] text-blue-600 shrink-0" />
                             <span className="text-[14px] font-bold text-slate-700 truncate pr-2">{selectedProjectForSidebar.project_name}</span>
                           </div>
-                          <button onClick={(e) => { e.stopPropagation(); setSelectedProjectForSidebar(null); setActiveProjectSubTab(null); }} className="p-1 bg-white border border-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors shadow-sm shrink-0 flex items-center justify-center">
+                          <button onClick={(e) => { e.stopPropagation(); closeProjectDetails(); }} className="p-1 bg-white border border-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors shadow-sm shrink-0 flex items-center justify-center">
                             <X className="w-3.5 h-3.5" />
                           </button>
                         </div>
-
                         <div className="flex flex-col gap-1 relative before:absolute before:left-[22px] before:top-2 before:bottom-4 before:w-[1.5px] before:bg-slate-100/80 before:rounded-full">
-                          <button onClick={() => { setActiveProjectSubTab('progress'); setSelectedTowerForProgress(null); }} className={`w-full flex items-center gap-4 px-4 py-3 relative z-10 group transition-all rounded-xl ${activeProjectSubTab === 'progress' ? 'bg-blue-50/50' : ''}`}>
+                          <button onClick={() => handleSubTabChange('progress')} className={`w-full flex items-center gap-4 px-4 py-3 relative z-10 group transition-all rounded-xl ${activeProjectSubTab === 'progress' ? 'bg-blue-50/50' : ''}`}>
                             <div className="bg-[#f4f7f9] z-10 relative"><TrendingUp className={`w-[18px] h-[18px] transition-colors ${activeProjectSubTab === 'progress' ? 'text-blue-600' : 'text-slate-500 group-hover:text-blue-500'}`} /></div>
                             <span className={`text-[14.5px] font-bold transition-colors ${activeProjectSubTab === 'progress' ? 'text-blue-700' : 'text-slate-600 group-hover:text-slate-800'}`}>Progress</span>
                           </button>
-                          <button onClick={() => setActiveProjectSubTab('announcement')} className={`w-full flex items-center gap-4 px-4 py-3 relative z-10 group transition-all rounded-xl ${activeProjectSubTab === 'announcement' ? 'bg-blue-50/50' : ''}`}>
+                          <button onClick={() => handleSubTabChange('announcement')} className={`w-full flex items-center gap-4 px-4 py-3 relative z-10 group transition-all rounded-xl ${activeProjectSubTab === 'announcement' ? 'bg-blue-50/50' : ''}`}>
                             <div className="bg-[#f4f7f9] z-10 relative"><Megaphone className={`w-[18px] h-[18px] transition-colors ${activeProjectSubTab === 'announcement' ? 'text-blue-600' : 'text-slate-500 group-hover:text-blue-500'}`} /></div>
                             <span className={`text-[14.5px] font-bold transition-colors ${activeProjectSubTab === 'announcement' ? 'text-blue-700' : 'text-slate-600 group-hover:text-slate-800'}`}>Announcement</span>
                           </button>
 
-                          <button onClick={() => setActiveProjectSubTab('staff')} className={`w-full flex items-center gap-4 px-4 py-3 relative z-10 group transition-all rounded-xl ${activeProjectSubTab === 'staff' ? 'bg-blue-50/50' : ''}`}>
+                          <button onClick={() => handleSubTabChange('staff')} className={`w-full flex items-center gap-4 px-4 py-3 relative z-10 group transition-all rounded-xl ${activeProjectSubTab === 'staff' ? 'bg-blue-50/50' : ''}`}>
                             <div className="bg-[#f4f7f9] z-10 relative"><Users className={`w-[18px] h-[18px] transition-colors ${activeProjectSubTab === 'staff' ? 'text-blue-600' : 'text-slate-500 group-hover:text-blue-500'}`} /></div>
                             <span className={`text-[14.5px] font-bold transition-colors ${activeProjectSubTab === 'staff' ? 'text-blue-700' : 'text-slate-600 group-hover:text-slate-800'}`}>Staff</span>
                           </button>
@@ -664,663 +962,692 @@ export default function BuilderDashboard() {
 
         {/* Content Area */}
         <main className="flex-1 overflow-y-auto p-8 lg:p-12 relative">
-          <div className="w-full max-w-none">
-
-            {activeProjectSubTab && selectedProjectForSidebar ? (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6 mt-2">
-                <div className="flex items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60 relative overflow-hidden">
-                  {/* Decorative Background for Project Header */}
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-100/30 to-indigo-50/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-                  
-                  <div className="flex items-center gap-5 relative z-10">
-                    <div>
-                      <h2 className="text-3xl font-black text-slate-900 capitalize flex items-center gap-3">
-                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
-                          {activeProjectSubTab === 'announcement' ? 'Announcements' : selectedProjectForSidebar.project_name}
-                        </span>
-                      </h2>
-                      <p className="text-sm font-semibold text-slate-500 mt-1.5 flex items-center gap-2">
-                        {activeProjectSubTab === 'announcement' ? 'View announcements for this project' : (
-                          <><MapPin className="w-4 h-4 text-blue-500" /> Location: <span className="font-bold text-slate-700">{selectedProjectForSidebar.location || 'N/A'}</span></>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="relative z-10 flex items-center gap-3">
-                    {activeProjectSubTab === 'progress' && selectedProjectForSidebar && (
-                      <button onClick={() => setShowTowerForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2 shrink-0">
-                        <Plus className="w-4 h-4" /> {selectedProjectForSidebar?.project_type === 'Society' ? 'Add Section' : 'Add Tower'}
-                      </button>
-                    )}
-                    {activeProjectSubTab === 'announcement' && (
-                      <button onClick={() => setShowAnnouncementForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2 shrink-0">
-                        <Plus className="w-4 h-4" /> Add Announcement
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {activeProjectSubTab === 'progress' && selectedTowerForProgress ? (
-                  selectedFloorForProgress ? (
-                    <TowerProgress
-                      towerId={selectedTowerForProgress.id}
-                      towerName={selectedTowerForProgress.tower_name}
-                      floorNumber={selectedFloorForProgress}
-                      unitType={selectedProjectForSidebar?.project_type === 'Society' ? 'House' : 'Floor'}
-                      projectType={selectedProjectForSidebar?.project_type || 'Flat'}
-                      onBack={() => setSelectedFloorForProgress(null)}
-                    />
-                  ) : (
-                    <FloorList
-                      towerId={selectedTowerForProgress.id}
-                      towerName={selectedTowerForProgress.tower_name}
-                      totalFloors={selectedTowerForProgress.total_floors || selectedTowerForProgress.total_houses}
-                      numberSeries={selectedTowerForProgress.number_series}
-                      unitType={selectedProjectForSidebar?.project_type === 'Society' ? 'House' : 'Floor'}
-                      onSelectFloor={(floor) => setSelectedFloorForProgress(floor)}
-                      onBack={() => setSelectedTowerForProgress(null)}
-                    />
-                  )
-                ) : activeProjectSubTab === 'progress' && towers.length > 0 ? (
-                  <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {towers.map(tower => (
-                      <div 
-                        key={tower.id} 
-                        onClick={() => setSelectedTowerForProgress(tower)}
-                        className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow group flex items-center justify-between cursor-pointer hover:border-blue-300"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                            <Building className="w-6 h-6" />
-                          </div>
-                          <div>
-                            <h3 className="text-xl font-bold text-slate-900 mb-0.5">{tower.tower_name}</h3>
-                            <p className="text-sm font-semibold text-slate-500">{tower.total_floors || tower.total_houses} {tower.total_floors ? 'Floors' : 'Houses'} {tower.bhk && <span className="ml-2 inline-block px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-lg">{tower.bhk}</span>}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col items-end gap-1">
-                          <span className="text-2xl font-black text-emerald-600 tracking-tight">
-                            {towerProgressMap[tower.id] || 0}%
-                          </span>
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                            Completed
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : activeProjectSubTab === 'announcement' && announcements.length > 0 ? (
-                  <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {announcements.map((ann) => (
-                      <div key={ann.id} onClick={() => { setSelectedAnnouncement(ann); setShowAnnouncementDetailsModal(true); }} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group flex flex-col justify-between cursor-pointer hover:border-indigo-300">
-                        <div>
-                          <div className="flex justify-between items-start mb-4">
-                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 text-[11px] font-bold uppercase tracking-wider rounded-xl">
-                              <Megaphone className="w-3.5 h-3.5" />
-                              {projects.find(p => p.id === ann.project_id)?.project_name || selectedProjectForSidebar?.project_name || 'Unknown Project'}
-                            </div>
-                            <span className="text-xs font-bold text-slate-400 mt-1">{ann.created_at ? new Date(ann.created_at).toLocaleDateString() : ann.date}</span>
-                          </div>
-                          <h3 className="text-lg font-bold text-slate-900 mb-2">{ann.title}</h3>
-                          <p className="text-sm font-medium text-slate-600 line-clamp-3">{ann.message}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : activeProjectSubTab === 'staff' && staffList.length > 0 ? (
-                  <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {staffList.map((staff) => (
-                      <div key={staff.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group flex flex-col justify-between cursor-default">
-                        <div>
-                          <div className="flex justify-between items-start mb-4">
-                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 text-[11px] font-bold uppercase tracking-wider rounded-xl">
-                              <Briefcase className="w-3.5 h-3.5" />
-                              {staff.role}
-                            </div>
-                            <span className="text-xs font-bold text-slate-400 mt-1">{staff.created_at ? new Date(staff.created_at).toLocaleDateString() : 'N/A'}</span>
-                          </div>
-                          <h3 className="text-lg font-bold text-slate-900 mb-2">{staff.name}</h3>
-                          <div className="space-y-1.5 mt-4">
-                            {staff.phone && <p className="text-sm font-medium text-slate-600 flex items-center gap-2">📞 {staff.phone}</p>}
-                            {staff.email && <p className="text-sm font-medium text-slate-600 flex items-center gap-2">✉️ {staff.email}</p>}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="mt-8 flex items-center justify-center min-h-[400px]">
-                    <p className="text-center text-slate-400/80 font-medium text-lg tracking-wide">
-                      {activeProjectSubTab === 'announcement'
-                        ? 'No announcement records found for this project.'
-                        : activeProjectSubTab === 'staff'
-                          ? 'No staff members assigned to this project yet.'
-                          : `No ${activeProjectSubTab} records found for this project.`}
-                    </p>
-                  </div>
-                )}
+          <AnimatePresence mode="wait">
+            {!hasHydrated ? (
+              <motion.div key="hydration-loader" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="w-full min-h-[400px] flex items-center justify-center">
+                <div className="w-10 h-10 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
               </motion.div>
+            ) : isDataLoading && !activeProjectSubTab ? (
+              <MainAreaSkeleton key="main-skeleton" />
             ) : (
-              <>
-                {/* Header */}
-                <motion.div
-                  key={`header-${activeTab}`}
-                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
-                  className="mb-10 flex items-start gap-6 bg-white p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/80 relative overflow-hidden"
-                >
-                  {/* Decorative Background Elements */}
-                  <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-100/40 to-indigo-50/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-                  <div className="absolute bottom-0 left-10 w-64 h-64 bg-gradient-to-tr from-emerald-50/50 to-transparent rounded-full blur-3xl translate-y-1/3 pointer-events-none" />
-                  
-                  <div className={`p-4 rounded-2xl flex items-center justify-center shrink-0 border relative z-10 ${
-                    activeTab === 'project' ? 'bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-[0_8px_20px_rgba(79,70,229,0.3)] border-transparent' :
-                    activeTab === 'customer' ? 'bg-gradient-to-br from-blue-500 to-cyan-500 text-white shadow-[0_8px_20px_rgba(59,130,246,0.3)] border-transparent' :
-                    'bg-gradient-to-br from-slate-700 to-slate-900 text-white border-transparent shadow-[0_8px_20px_rgba(15,23,42,0.3)]'
-                  }`}>
-                    {activeTab === 'project' ? <MapPin className="w-8 h-8" /> : 
-                     activeTab === 'customer' ? <Users className="w-8 h-8" /> : 
-                     <HardHat className="w-8 h-8" />}
-                  </div>
-                  <div className="flex flex-col justify-center pt-2 relative z-10">
-                    <h1 className="text-4xl font-black tracking-tight text-slate-900 mb-2 flex items-center gap-3">
-                      {activeTab === 'builder' ? 'Builder Matrix' : activeTab === 'customer' ? 'Customer' : 'Project'}
-                    </h1>
-                    <p className="text-sm font-semibold text-slate-500 max-w-2xl leading-relaxed">
-                      {activeTab === 'builder'
-                        ? 'Deploy new construction companies to the SuperAdmin ecosystem.'
-                        : activeTab === 'customer'
-                          ? 'Integrate new buyers and assign them directly to active builders.'
-                          : 'Initialize new real estate projects for the global tracker and configure tower matrices.'}
-                    </p>
-                  </div>
-                </motion.div>
+              <motion.div key="main-content" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full max-w-none">
+                {activeProjectSubTab && selectedProjectForSidebar ? (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6 mt-2">
+                  <div className="flex items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60 relative overflow-hidden">
+                    {/* Decorative Background for Project Header */}
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-100/30 to-indigo-50/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
 
-                {/* Form or List Card */}
-                <motion.div
-                  key={`form-${activeTab}`}
-                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: 'easeOut' }}
-                  className="bg-white/80 backdrop-blur-2xl rounded-3xl border border-slate-200/80 shadow-[0_20px_60px_rgba(0,0,0,0.05)] overflow-hidden relative group"
-                >
-
-                  <div className="px-8 py-6 border-b border-slate-100 bg-white/50 flex items-center justify-between relative z-10">
-                    <div className="flex items-center gap-4">
-                      <div className="p-2.5 bg-gradient-to-br from-blue-50 to-violet-50 text-blue-600 rounded-xl border border-blue-100">
-                        <List className="w-5 h-5" />
+                    <div className="flex items-center gap-5 relative z-10">
+                      <div>
+                        <h2 className="text-3xl font-black text-slate-900 capitalize flex items-center gap-3">
+                          <span className="bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
+                            {activeProjectSubTab === 'announcement' ? 'Announcements' : selectedProjectForSidebar.project_name}
+                          </span>
+                        </h2>
+                        <p className="text-sm font-semibold text-slate-500 mt-1.5 flex items-center gap-2">
+                          {activeProjectSubTab === 'announcement' ? 'View announcements for this project' : (
+                            <><MapPin className="w-4 h-4 text-blue-500" /> Location: <span className="font-bold text-slate-700">{selectedProjectForSidebar.location || 'N/A'}</span></>
+                          )}
+                        </p>
                       </div>
-                      <h2 className="font-bold text-xl text-slate-800">
-                        {activeTab === 'builder' ? 'Active Builders' : activeTab === 'customer' ? 'Active Customers' : 'Active Projects'}
-                      </h2>
                     </div>
 
-                    {/* Add Button Toggles Modal */}
-                    {activeTab === 'customer' && (
-                      <button onClick={() => setShowCustomerForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2">
-                        <Plus className="w-4 h-4" /> Add Customer
-                      </button>
-                    )}
-                    {activeTab === 'project' && (
-                      <button onClick={() => setShowProjectForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2">
-                        <Plus className="w-4 h-4" /> Add Project
-                      </button>
-                    )}
-
-
+                    <div className="relative z-10 flex items-center gap-3">
+                      {activeProjectSubTab === 'progress' && selectedProjectForSidebar && (
+                        <button onClick={() => setShowTowerForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2 shrink-0">
+                          <Plus className="w-4 h-4" /> {selectedProjectForSidebar?.project_type === 'Society' ? 'Add Section' : 'Add Tower'}
+                        </button>
+                      )}
+                      {activeProjectSubTab === 'announcement' && (
+                        <button onClick={() => setShowAnnouncementForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2 shrink-0">
+                          <Plus className="w-4 h-4" /> Add Announcement
+                        </button>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="p-8 sm:p-12 relative z-10">
-
-
-
-                    {/* PERSONAL DETAILS / PROFILE VIEW */}
-                    {activeTab === 'profile' && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="max-w-5xl mx-auto"
-                      >
-                        <div className="bg-white/80 backdrop-blur-3xl rounded-[2.5rem] shadow-[0_20px_80px_rgba(0,0,0,0.07)] border border-white/50 overflow-hidden relative">
-                          {/* Decorative orbs behind */}
-                          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                  <AnimatePresence mode="wait">
+                    {isDataLoading ? (
+                      (() => {
+                        if (typeof window !== 'undefined') {
+                          const params = new URLSearchParams(window.location.search);
+                          const towerId = params.get('towerId');
+                          const floor = params.get('floor');
                           
-                          {/* Profile Header Cover */}
-                          <div className="h-72 bg-slate-900 relative">
-                            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-indigo-600/40 mix-blend-overlay"></div>
-                            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
-                            
-                            {/* Animated Background Elements in Header */}
-                            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                              <div className="absolute top-10 right-20 w-32 h-32 bg-blue-400/30 rounded-full blur-3xl animate-pulse"></div>
-                              <div className="absolute bottom-10 left-1/2 w-48 h-48 bg-indigo-500/30 rounded-full blur-3xl animate-pulse delay-700"></div>
+                          if (activeProjectSubTab === 'progress') {
+                            if (floor) return <TowerProgressSkeleton key="tower-progress-skeleton" />;
+                            if (towerId) return <FloorListSkeleton key="floor-list-skeleton" />;
+                            return <TowersGridSkeleton key="towers-grid-skeleton" />;
+                          }
+                        }
+                        return <SubTabSkeleton key="sub-skeleton" />;
+                      })()
+                    ) : activeProjectSubTab === 'progress' && selectedTowerForProgress ? (
+                      <motion.div key="tower-progress" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}>
+                        {selectedFloorForProgress ? (
+                      <TowerProgress
+                        towerId={selectedTowerForProgress.id}
+                        towerName={selectedTowerForProgress.tower_name}
+                        floorNumber={selectedFloorForProgress}
+                        unitType={selectedProjectForSidebar?.project_type === 'Society' ? 'House' : 'Floor'}
+                        projectType={selectedProjectForSidebar?.project_type || 'Flat'}
+                        onBack={handleBackToFloors}
+                      />
+                    ) : (
+                      <FloorList
+                        towerId={selectedTowerForProgress.id}
+                        towerName={selectedTowerForProgress.tower_name}
+                        totalFloors={selectedTowerForProgress.total_floors || selectedTowerForProgress.total_houses}
+                        numberSeries={selectedTowerForProgress.number_series}
+                        unitType={selectedProjectForSidebar?.project_type === 'Society' ? 'House' : 'Floor'}
+                        onSelectFloor={handleFloorSelect}
+                        onBack={handleBackToTowers}
+                      />
+                    )}
+                  </motion.div>
+                    ) : activeProjectSubTab === 'progress' && towers.length > 0 ? (
+                      <motion.div key="tower-grid" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {towers.map(tower => (
+                        <div
+                          key={tower.id}
+                          onClick={() => handleTowerSelect(tower)}
+                          className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow group flex items-center justify-between cursor-pointer hover:border-blue-300"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                              <Building className="w-6 h-6" />
                             </div>
-
-                            <div className="absolute -bottom-24 left-10 z-10">
-                              <div className="relative group">
-                                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-full blur-2xl opacity-0 group-hover:opacity-60 transition-opacity duration-500"></div>
-                                <div className="w-48 h-48 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-7xl shadow-[0_0_0_8px_white,0_20px_40px_rgba(0,0,0,0.3)] relative z-10 border border-slate-700/50">
-                                  {builders[0]?.company_name?.charAt(0) || 'N'}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="absolute bottom-6 right-8 bg-white/10 backdrop-blur-xl px-5 py-2.5 rounded-2xl border border-white/20 text-white font-medium text-sm flex items-center gap-2.5 shadow-xl">
-                              <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_rgba(52,211,153,0.8)]"></div>
-                              Verified Builder Account
+                            <div>
+                              <h3 className="text-xl font-bold text-slate-900 mb-0.5">{tower.tower_name}</h3>
+                              <p className="text-sm font-semibold text-slate-500">{tower.total_floors || tower.total_houses} {tower.total_floors ? 'Floors' : 'Houses'} {tower.bhk && <span className="ml-2 inline-block px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-lg">{tower.bhk}</span>}</p>
                             </div>
                           </div>
-                          
-                          {/* Profile Details */}
-                          <div className="pt-32 px-10 pb-12 relative z-10">
-                            <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-6">
-                              <div>
-                                <h2 className="text-4xl font-black text-slate-900 tracking-tight">{builders[0]?.company_name || 'Nirman Builders'}</h2>
-                                <p className="text-slate-500 font-medium text-lg mt-2 flex items-center gap-2">
-                                  <MapPin className="w-5 h-5 text-blue-500" /> Mumbai, Maharashtra, India
-                                </p>
-                              </div>
-                              <button 
-                                onClick={() => {
-                                  setEditProfileData({
-                                    company_name: builders[0]?.company_name || 'Nirman Builders',
-                                    email: builders[0]?.email || 'contact@nirman.com',
-                                    phone: builders[0]?.phone || '+91 98765 43210',
-                                    about: builders[0]?.about || 'Nirman Builders has been a leading construction and real estate development company for over a decade. We are committed to building sustainable, premium quality homes and commercial spaces that transform city skylines and offer modern living environments for our customers.'
-                                  });
-                                  setShowEditProfileModal(true);
-                                }}
-                                className="px-8 py-3.5 bg-gradient-to-r from-slate-900 to-slate-800 text-white font-bold rounded-2xl hover:shadow-[0_10px_30px_rgba(15,23,42,0.3)] hover:-translate-y-1 transition-all duration-300 shadow-lg border border-slate-700">
-                                Edit Profile
-                              </button>
-                            </div>
 
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mt-12">
-                              <div className="space-y-8">
-                                <div>
-                                  <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-5 flex items-center gap-3">
-                                    <div className="w-8 h-[2px] bg-blue-500/30"></div>
-                                    Contact Information
-                                  </h3>
-                                  <div className="space-y-4">
-                                    <div className="flex items-center gap-5 p-5 rounded-3xl bg-white border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] transition-all hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:border-blue-200 group">
-                                      <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
-                                        <Mail className="w-6 h-6" />
-                                      </div>
-                                      <div>
-                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Email Address</p>
-                                        <p className="font-bold text-slate-800 text-lg">{builders[0]?.email || 'contact@nirman.com'}</p>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-5 p-5 rounded-3xl bg-white border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] transition-all hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:border-emerald-200 group">
-                                      <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 group-hover:-rotate-3 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300">
-                                        <Phone className="w-6 h-6" />
-                                      </div>
-                                      <div>
-                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Phone Number</p>
-                                        <p className="font-bold text-slate-800 text-lg">{builders[0]?.phone || '+91 98765 43210'}</p>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
+                          <div className="flex flex-col items-end gap-1">
+                            <span className="text-2xl font-black text-emerald-600 tracking-tight">
+                              {towerProgressMap[tower.id] || 0}%
+                            </span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                              Completed
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                      </motion.div>
+                    ) : activeProjectSubTab === 'announcement' && announcements.length > 0 ? (
+                      <motion.div key="announcement-grid" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {announcements.map((ann) => (
+                        <div key={ann.id} onClick={() => { setSelectedAnnouncement(ann); setShowAnnouncementDetailsModal(true); }} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group flex flex-col justify-between cursor-pointer hover:border-indigo-300">
+                          <div>
+                            <div className="flex justify-between items-start mb-4">
+                              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 text-[11px] font-bold uppercase tracking-wider rounded-xl">
+                                <Megaphone className="w-3.5 h-3.5" />
+                                {projects.find(p => p.id === ann.project_id)?.project_name || selectedProjectForSidebar?.project_name || 'Unknown Project'}
                               </div>
-                              
-                              <div className="space-y-8">
-                                <div>
-                                  <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-5 flex items-center gap-3">
-                                    <div className="w-8 h-[2px] bg-indigo-500/30"></div>
-                                    Account Stats
-                                  </h3>
-                                  <div className="grid grid-cols-2 gap-5">
-                                    <div className="p-6 rounded-3xl bg-gradient-to-br from-indigo-50 to-blue-50/50 border border-indigo-100/50 relative overflow-hidden group cursor-default shadow-[0_4px_20px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-shadow">
-                                      <div className="absolute -right-6 -top-6 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
-                                      <div className="relative z-10">
-                                        <div className="w-12 h-12 rounded-xl bg-white/60 flex items-center justify-center mb-5 text-indigo-600 shadow-sm">
-                                          <Building2 className="w-6 h-6" />
-                                        </div>
-                                        <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-1">Total Projects</p>
-                                        <p className="text-5xl font-black text-slate-900 tracking-tight">{projects.length}</p>
-                                      </div>
-                                    </div>
-                                    <div className="p-6 rounded-3xl bg-gradient-to-br from-amber-50 to-orange-50/50 border border-amber-100/50 relative overflow-hidden group cursor-default shadow-[0_4px_20px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-shadow">
-                                      <div className="absolute -right-6 -top-6 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
-                                      <div className="relative z-10">
-                                        <div className="w-12 h-12 rounded-xl bg-white/60 flex items-center justify-center mb-5 text-amber-600 shadow-sm">
-                                          <Users className="w-6 h-6" />
-                                        </div>
-                                        <p className="text-xs font-bold text-amber-600 uppercase tracking-widest mb-1">Total Customers</p>
-                                        <p className="text-5xl font-black text-slate-900 tracking-tight">{customers.length}</p>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
+                              <span className="text-xs font-bold text-slate-400 mt-1">{ann.created_at ? new Date(ann.created_at).toLocaleDateString() : ann.date}</span>
                             </div>
-                            
-                            <div className="mt-12 pt-10 border-t border-slate-100/80">
-                              <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
-                                <div className="w-8 h-[2px] bg-slate-200"></div>
-                                About the Builder
-                              </h3>
-                              <p className="text-slate-600 leading-loose font-medium text-lg max-w-3xl">
-                                Nirman Builders has been a leading construction and real estate development company for over a decade. We are committed to building sustainable, premium quality homes and commercial spaces that transform city skylines and offer modern living environments for our customers.
-                              </p>
+                            <h3 className="text-lg font-bold text-slate-900 mb-2">{ann.title}</h3>
+                            <p className="text-sm font-medium text-slate-600 line-clamp-3">{ann.message}</p>
+                          </div>
+                        </div>
+                      ))}
+                      </motion.div>
+                    ) : activeProjectSubTab === 'staff' && staffList.length > 0 ? (
+                      <motion.div key="staff-grid" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {staffList.map((staff) => (
+                        <div key={staff.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group flex flex-col justify-between cursor-default">
+                          <div>
+                            <div className="flex justify-between items-start mb-4">
+                              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 text-[11px] font-bold uppercase tracking-wider rounded-xl">
+                                <Briefcase className="w-3.5 h-3.5" />
+                                {staff.role}
+                              </div>
+                              <span className="text-xs font-bold text-slate-400 mt-1">{staff.created_at ? new Date(staff.created_at).toLocaleDateString() : 'N/A'}</span>
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900 mb-2">{staff.name}</h3>
+                            <div className="space-y-1.5 mt-4">
+                              {staff.phone && <p className="text-sm font-medium text-slate-600 flex items-center gap-2">📞 {staff.phone}</p>}
+                              {staff.email && <p className="text-sm font-medium text-slate-600 flex items-center gap-2">✉️ {staff.email}</p>}
                             </div>
                           </div>
                         </div>
+                      ))}
+                      </motion.div>
+                    ) : (
+                      <motion.div key="empty-state" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="mt-12 text-center py-24 bg-white rounded-3xl border border-dashed border-slate-300">
+                        <AlertCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                        <h3 className="text-xl font-bold text-slate-700 mb-2">No Data Available</h3>
+                        <p className="text-slate-500">
+                          {activeProjectSubTab === 'announcement'
+                            ? 'No announcement records found for this project.'
+                            : activeProjectSubTab === 'staff'
+                              ? 'No staff members assigned to this project yet.'
+                              : `No ${activeProjectSubTab} records found for this project.`}
+                        </p>
                       </motion.div>
                     )}
-
-                    {/* CUSTOMER LIST VIEW */}
-                    {activeTab === 'customer' && (
-                      <div className="flex flex-col gap-6">
-                        <div className="flex flex-col sm:flex-row gap-4 items-center">
-                          <div className="w-full sm:w-64">
-                            <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Filter by Type</label>
-                            <CustomSelect
-                              value={customerTypeFilter}
-                              onChange={(val) => { setCustomerTypeFilter(val); setCustomerPage(1); }}
-                              options={[
-                                { label: 'All Types', value: 'All' },
-                                { label: 'Flat', value: 'Flat' },
-                                { label: 'Commercial', value: 'Commercial' },
-                                { label: 'Society', value: 'Society' }
-                              ]}
-                            />
-                          </div>
-                          <div className="w-full sm:w-64">
-                            <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Filter by Project</label>
-                            <CustomSelect
-                              value={customerProjectFilter}
-                              onChange={(val) => { setCustomerProjectFilter(val); setCustomerPage(1); }}
-                              options={[
-                                { label: 'All Projects', value: 'All' },
-                                ...projects.map(p => ({ label: p.project_name, value: p.id }))
-                              ]}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="overflow-x-auto -mx-4 sm:-mx-0 mt-6">
-                          <table className="w-full text-left border-collapse min-w-[800px]">
-                            <thead>
-                              <tr className="border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
-                                <th className="pb-4 px-4">Name</th>
-                                <th className="pb-4 px-4">Contact Details</th>
-                                <th className="pb-4 px-4">Tower / Flat</th>
-                                <th className="pb-4 px-4 text-right">Actions</th>
-                              </tr>
-                            </thead>
-                            <tbody className="text-slate-700">
-                              {(() => {
-                                const filteredCustomers = customers
-                                  .filter(c => customerTypeFilter === 'All' || c.customer_type === customerTypeFilter)
-                                  .filter(c => customerProjectFilter === 'All' || c.project_id === customerProjectFilter);
-                                
-                                const currentData = filteredCustomers.slice((customerPage - 1) * customersPerPage, customerPage * customersPerPage);
-
-                                if (filteredCustomers.length === 0) {
-                                  return (
-                                    <tr>
-                                      <td colSpan={4} className="py-12 text-center text-slate-500 font-medium">
-                                        No customers match the selected filters.
-                                      </td>
-                                    </tr>
-                                  );
-                                }
-
-                                return currentData.map((customer) => (
-                                  <tr 
-                                    key={customer.id} 
-                                    onClick={() => { setSelectedCustomer(customer); setShowCustomerDetailsModal(true); }}
-                                    className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group cursor-pointer"
-                                  >
-                                    <td className="py-5 px-4 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                                      {customer.first_name} {customer.last_name}
-                                      {customer.customer_type && <div className="text-xs font-normal text-slate-500 mt-1">{customer.customer_type}</div>}
-                                    </td>
-                                    <td className="py-5 px-4 text-slate-600 font-medium">
-                                      <div>{customer.email}</div>
-                                      <div className="text-sm text-slate-500 mt-1">{customer.phone || 'N/A'}</div>
-                                    </td>
-                                    <td className="py-5 px-4 text-slate-600 font-medium">
-                                      {customer.tower_name ? (
-                                        <>
-                                          <div className="font-semibold text-slate-800">{customer.tower_name}</div>
-                                          <div className="text-sm text-slate-500 mt-1">
-                                            Floor {customer.floor || '-'} | {customer.customer_type === 'Commercial' ? 'Unit' : 'Flat'} {customer.flat_name || customer.flat_number || '-'}
-                                          </div>
-                                          {(customer.bhk || customer.area_sqft) && (
-                                            <div className="text-xs text-slate-400 mt-1">
-                                              {customer.bhk && <span>{customer.bhk}</span>}
-                                              {customer.bhk && customer.area_sqft && <span> &bull; </span>}
-                                              {customer.area_sqft && <span>{customer.area_sqft} sqft</span>}
-                                            </div>
-                                          )}
-                                        </>
-                                      ) : (
-                                        <span className="text-slate-400 italic">Not Assigned</span>
-                                      )}
-                                    </td>
-                                    <td className="py-5 px-4 text-right">
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); setSelectedCustomer(customer); setShowCustomerDetailsModal(true); }}
-                                        className="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors"
-                                      >
-                                        View
-                                      </button>
-                                    </td>
-                                  </tr>
-                                ));
-                              })()}
-                            </tbody>
-                          </table>
-                        </div>
-
-                        {/* Pagination Controls */}
-                        {(() => {
-                          const filteredCustomers = customers
-                            .filter(c => customerTypeFilter === 'All' || c.customer_type === customerTypeFilter)
-                            .filter(c => customerProjectFilter === 'All' || c.project_id === customerProjectFilter);
-                          const totalPages = Math.ceil(filteredCustomers.length / customersPerPage);
-                          
-                          if (filteredCustomers.length === 0) return null;
-                          
-                          return (
-                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-2 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-                              <div className="flex items-center gap-3">
-                                <label className="text-sm font-semibold text-slate-600">Show</label>
-                                <CustomSelect
-                                  value={customersPerPage}
-                                  onChange={(val) => { setCustomersPerPage(Number(val)); setCustomerPage(1); }}
-                                  className="w-24"
-                                  dropdownPosition="top"
-                                  options={[
-                                    { label: '10', value: 10 },
-                                    { label: '25', value: 25 },
-                                    { label: '50', value: 50 },
-                                    { label: '100', value: 100 }
-                                  ]}
-                                />
-                                <label className="text-sm font-semibold text-slate-600">entries</label>
-                              </div>
-                              
-                              <div className="flex items-center gap-2">
-                                <button
-                                  disabled={customerPage === 1}
-                                  onClick={() => setCustomerPage(prev => Math.max(1, prev - 1))}
-                                  className="px-4 py-2 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-blue-600 disabled:opacity-50 disabled:hover:text-slate-700 disabled:cursor-not-allowed transition-all shadow-sm"
-                                >
-                                  Prev
-                                </button>
-                                <div className="px-4 py-2 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-xl shadow-sm">
-                                  {customerPage} / {totalPages}
-                                </div>
-                                <button
-                                  disabled={customerPage === totalPages}
-                                  onClick={() => setCustomerPage(prev => Math.min(totalPages, prev + 1))}
-                                  className="px-4 py-2 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-blue-600 disabled:opacity-50 disabled:hover:text-slate-700 disabled:cursor-not-allowed transition-all shadow-sm"
-                                >
-                                  Next
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    )}
-                    {/* PROJECT LIST VIEW */}
-                    {activeTab === 'project' && !activeProjectSubTab && (
-                      <div className="flex flex-col gap-6">
-                        {/* Filters */}
-                        <div className="flex flex-col sm:flex-row items-center gap-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-                          <div className="w-full sm:w-1/3">
-                            <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-widest">Filter by Type</label>
-                            <CustomSelect
-                              value={projectTypeFilter}
-                              onChange={(val) => { setProjectTypeFilter(val); setProjectNameSearch(''); setProjectPage(1); }}
-                              options={[
-                                { label: 'All Types', value: 'All' },
-                                { label: 'Flat', value: 'Flat' },
-                                { label: 'Commercial', value: 'Commercial' },
-                                { label: 'Society', value: 'Society' }
-                              ]}
-                            />
-                          </div>
-                          <div className="w-full sm:w-2/3">
-                            <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-widest">Filter by Name</label>
-                            <CustomSelect
-                              value={projectNameSearch}
-                              onChange={(val) => { setProjectNameSearch(val); setProjectPage(1); }}
-                              placeholder="All Projects"
-                              options={[
-                                { label: 'All Projects', value: '' },
-                                ...projects
-                                  .filter(p => projectTypeFilter === 'All' || p.project_type === projectTypeFilter)
-                                  .map(p => ({ label: p.project_name, value: p.project_name }))
-                              ]}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="overflow-x-auto -mx-4 sm:-mx-0">
-                          <table className="w-full text-left border-collapse min-w-[600px]">
-                            <thead>
-                              <tr className="border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
-                                <th className="pb-4 px-4">Project Name</th>
-                                <th className="pb-4 px-4">Location</th>
-                                <th className="pb-4 px-4">Expected Possession</th>
-                                <th className="pb-4 px-4 text-right">Status</th>
-                                <th className="pb-4 px-4 text-right">Actions</th>
-                              </tr>
-                            </thead>
-                            <tbody className="text-slate-700">
-                              {(() => {
-                                const filteredProjects = projects
-                                  .filter(p => projectTypeFilter === 'All' || p.project_type === projectTypeFilter)
-                                  .filter(p => projectNameSearch === '' || p.project_name === projectNameSearch);
-                                
-                                const currentData = filteredProjects.slice((projectPage - 1) * projectsPerPage, projectPage * projectsPerPage);
-
-                                if (filteredProjects.length === 0) {
-                                  return (
-                                    <tr>
-                                      <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
-                                        No projects found matching the filters.
-                                      </td>
-                                    </tr>
-                                  );
-                                }
-
-                                return currentData.map((project) => (
-                                  <tr 
-                                    key={project.id} 
-                                    onClick={() => { setSelectedProjectForSidebar(project); setActiveProjectSubTab('progress'); }}
-                                    className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group cursor-pointer"
-                                  >
-                                    <td className="py-5 px-4 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                                      {project.project_name}
-                                    </td>
-                                    <td className="py-5 px-4 text-slate-600 font-medium">{project.location || 'N/A'}</td>
-                                    <td className="py-5 px-4 text-slate-600 font-medium">{project.expected_possession || project.expectedPossession || 'N/A'}</td>
-                                    <td className="py-5 px-4 text-right">
-                                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-extrabold tracking-wider border ${project.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
-                                        project.status === 'Under Construction' ? 'bg-amber-50 text-amber-600 border-amber-200' :
-                                          'bg-blue-50 text-blue-600 border-blue-200'
-                                        }`}>
-                                        {project.status || 'Planning'}
-                                      </span>
-                                    </td>
-                                    <td className="py-5 px-4 text-right">
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); setSelectedProjectForSidebar(project); setActiveProjectSubTab('progress'); }}
-                                        className="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors"
-                                      >
-                                        View
-                                      </button>
-                                    </td>
-                                  </tr>
-                                ));
-                              })()}
-                            </tbody>
-                          </table>
-                        </div>
-
-                        {/* Pagination Controls */}
-                        {(() => {
-                          const filteredProjects = projects
-                            .filter(p => projectTypeFilter === 'All' || p.project_type === projectTypeFilter)
-                            .filter(p => projectNameSearch === '' || p.project_name === projectNameSearch);
-                          const totalPages = Math.ceil(filteredProjects.length / projectsPerPage);
-                          
-                          if (filteredProjects.length === 0) return null;
-                          
-                          return (
-                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-2 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-                              <div className="flex items-center gap-3">
-                                <label className="text-sm font-semibold text-slate-600">Show</label>
-                                <CustomSelect
-                                  value={projectsPerPage}
-                                  onChange={(val) => { setProjectsPerPage(Number(val)); setProjectPage(1); }}
-                                  className="w-24"
-                                  dropdownPosition="top"
-                                  options={[
-                                    { label: '10', value: 10 },
-                                    { label: '25', value: 25 },
-                                    { label: '50', value: 50 },
-                                    { label: '100', value: 100 }
-                                  ]}
-                                />
-                                <label className="text-sm font-semibold text-slate-600">entries</label>
-                              </div>
-                              
-                              <div className="flex items-center gap-2">
-                                <button
-                                  disabled={projectPage === 1}
-                                  onClick={() => setProjectPage(prev => Math.max(1, prev - 1))}
-                                  className="px-4 py-2 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-blue-600 disabled:opacity-50 disabled:hover:text-slate-700 disabled:cursor-not-allowed transition-all shadow-sm"
-                                >
-                                  Prev
-                                </button>
-                                <div className="px-4 py-2 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-xl shadow-sm">
-                                  {projectPage} / {totalPages}
-                                </div>
-                                <button
-                                  disabled={projectPage === totalPages}
-                                  onClick={() => setProjectPage(prev => Math.min(totalPages, prev + 1))}
-                                  className="px-4 py-2 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-blue-600 disabled:opacity-50 disabled:hover:text-slate-700 disabled:cursor-not-allowed transition-all shadow-sm"
-                                >
-                                  Next
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    )}
-                  </div>
+                  </AnimatePresence>
                 </motion.div>
-              </>
+              ) : (
+                <>
+                  {/* Header */}
+                  <motion.div
+                    key={`header-${activeTab}`}
+                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
+                    className="mb-10 flex items-start gap-6 bg-white p-8 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/80 relative overflow-hidden"
+                  >
+                    {/* Decorative Background Elements */}
+                    <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-100/40 to-indigo-50/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+                    <div className="absolute bottom-0 left-10 w-64 h-64 bg-gradient-to-tr from-emerald-50/50 to-transparent rounded-full blur-3xl translate-y-1/3 pointer-events-none" />
+
+                    <div className={`p-4 rounded-2xl flex items-center justify-center shrink-0 border relative z-10 ${activeTab === 'project' ? 'bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-[0_8px_20px_rgba(79,70,229,0.3)] border-transparent' :
+                        activeTab === 'customer' ? 'bg-gradient-to-br from-blue-500 to-cyan-500 text-white shadow-[0_8px_20px_rgba(59,130,246,0.3)] border-transparent' :
+                          'bg-gradient-to-br from-slate-700 to-slate-900 text-white border-transparent shadow-[0_8px_20px_rgba(15,23,42,0.3)]'
+                      }`}>
+                      {activeTab === 'project' ? <MapPin className="w-8 h-8" /> :
+                        activeTab === 'customer' ? <Users className="w-8 h-8" /> :
+                          <HardHat className="w-8 h-8" />}
+                    </div>
+                    <div className="flex flex-col justify-center pt-2 relative z-10">
+                      <h1 className="text-4xl font-black tracking-tight text-slate-900 mb-2 flex items-center gap-3">
+                        {activeTab === 'builder' ? 'Builder Matrix' : activeTab === 'customer' ? 'Customer' : 'Project'}
+                      </h1>
+                      <p className="text-sm font-semibold text-slate-500 max-w-2xl leading-relaxed">
+                        {activeTab === 'builder'
+                          ? 'Deploy new construction companies to the SuperAdmin ecosystem.'
+                          : activeTab === 'customer'
+                            ? 'Integrate new buyers and assign them directly to active builders.'
+                            : 'Initialize new real estate projects for the global tracker and configure tower matrices.'}
+                      </p>
+                    </div>
+                  </motion.div>
+
+                  {/* Form or List Card */}
+                  <motion.div
+                    key={`form-${activeTab}`}
+                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: 'easeOut' }}
+                    className="bg-white/80 backdrop-blur-2xl rounded-3xl border border-slate-200/80 shadow-[0_20px_60px_rgba(0,0,0,0.05)] overflow-hidden relative group"
+                  >
+
+                    <div className="px-8 py-6 border-b border-slate-100 bg-white/50 flex items-center justify-between relative z-10">
+                      <div className="flex items-center gap-4">
+                        <div className="p-2.5 bg-gradient-to-br from-blue-50 to-violet-50 text-blue-600 rounded-xl border border-blue-100">
+                          <List className="w-5 h-5" />
+                        </div>
+                        <h2 className="font-bold text-xl text-slate-800">
+                          {activeTab === 'builder' ? 'Active Builders' : activeTab === 'customer' ? 'Active Customers' : 'Active Projects'}
+                        </h2>
+                      </div>
+
+                      {/* Add Button Toggles Modal */}
+                      {activeTab === 'customer' && (
+                        <button onClick={() => setShowCustomerForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2">
+                          <Plus className="w-4 h-4" /> Add Customer
+                        </button>
+                      )}
+                      {activeTab === 'project' && (
+                        <button onClick={() => setShowProjectForm(true)} className="px-5 py-2.5 font-bold text-sm rounded-xl transition-all shadow-[0_5px_15px_rgba(59,130,246,0.3)] bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white flex items-center gap-2">
+                          <Plus className="w-4 h-4" /> Add Project
+                        </button>
+                      )}
+
+
+                    </div>
+
+                    <div className="p-8 sm:p-12 relative z-10">
+
+
+
+                      {/* PERSONAL DETAILS / PROFILE VIEW */}
+                      {activeTab === 'profile' && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="max-w-5xl mx-auto"
+                        >
+                          <div className="bg-white/80 backdrop-blur-3xl rounded-[2.5rem] shadow-[0_20px_80px_rgba(0,0,0,0.07)] border border-white/50 overflow-hidden relative">
+                            {/* Decorative orbs behind */}
+                            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+
+                            {/* Profile Header Cover */}
+                            <div className="h-72 bg-slate-900 relative">
+                              <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-indigo-600/40 mix-blend-overlay"></div>
+                              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
+
+                              {/* Animated Background Elements in Header */}
+                              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                                <div className="absolute top-10 right-20 w-32 h-32 bg-blue-400/30 rounded-full blur-3xl animate-pulse"></div>
+                                <div className="absolute bottom-10 left-1/2 w-48 h-48 bg-indigo-500/30 rounded-full blur-3xl animate-pulse delay-700"></div>
+                              </div>
+
+                              <div className="absolute -bottom-24 left-10 z-10">
+                                <div className="relative group">
+                                  <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-full blur-2xl opacity-0 group-hover:opacity-60 transition-opacity duration-500"></div>
+                                  <div className="w-48 h-48 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-7xl shadow-[0_0_0_8px_white,0_20px_40px_rgba(0,0,0,0.3)] relative z-10 border border-slate-700/50">
+                                    {builders[0]?.company_name?.charAt(0) || 'N'}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="absolute bottom-6 right-8 bg-white/10 backdrop-blur-xl px-5 py-2.5 rounded-2xl border border-white/20 text-white font-medium text-sm flex items-center gap-2.5 shadow-xl">
+                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_rgba(52,211,153,0.8)]"></div>
+                                Verified Builder Account
+                              </div>
+                            </div>
+
+                            {/* Profile Details */}
+                            <div className="pt-32 px-10 pb-12 relative z-10">
+                              <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-6">
+                                <div>
+                                  <h2 className="text-4xl font-black text-slate-900 tracking-tight">{builders[0]?.company_name || 'Nirman Builders'}</h2>
+                                  <p className="text-slate-500 font-medium text-lg mt-2 flex items-center gap-2">
+                                    <MapPin className="w-5 h-5 text-blue-500" /> Mumbai, Maharashtra, India
+                                  </p>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    setEditProfileData({
+                                      company_name: builders[0]?.company_name || 'Nirman Builders',
+                                      email: builders[0]?.email || 'contact@nirman.com',
+                                      phone: builders[0]?.phone || '+91 98765 43210',
+                                      about: builders[0]?.about || 'Nirman Builders has been a leading construction and real estate development company for over a decade. We are committed to building sustainable, premium quality homes and commercial spaces that transform city skylines and offer modern living environments for our customers.'
+                                    });
+                                    setShowEditProfileModal(true);
+                                  }}
+                                  className="px-8 py-3.5 bg-gradient-to-r from-slate-900 to-slate-800 text-white font-bold rounded-2xl hover:shadow-[0_10px_30px_rgba(15,23,42,0.3)] hover:-translate-y-1 transition-all duration-300 shadow-lg border border-slate-700">
+                                  Edit Profile
+                                </button>
+                              </div>
+
+                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mt-12">
+                                <div className="space-y-8">
+                                  <div>
+                                    <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-5 flex items-center gap-3">
+                                      <div className="w-8 h-[2px] bg-blue-500/30"></div>
+                                      Contact Information
+                                    </h3>
+                                    <div className="space-y-4">
+                                      <div className="flex items-center gap-5 p-5 rounded-3xl bg-white border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] transition-all hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:border-blue-200 group">
+                                        <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                                          <Mail className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Email Address</p>
+                                          <p className="font-bold text-slate-800 text-lg">{builders[0]?.email || 'contact@nirman.com'}</p>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-5 p-5 rounded-3xl bg-white border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] transition-all hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:border-emerald-200 group">
+                                        <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 group-hover:-rotate-3 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300">
+                                          <Phone className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Phone Number</p>
+                                          <p className="font-bold text-slate-800 text-lg">{builders[0]?.phone || '+91 98765 43210'}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="space-y-8">
+                                  <div>
+                                    <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-5 flex items-center gap-3">
+                                      <div className="w-8 h-[2px] bg-indigo-500/30"></div>
+                                      Account Stats
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-5">
+                                      <div className="p-6 rounded-3xl bg-gradient-to-br from-indigo-50 to-blue-50/50 border border-indigo-100/50 relative overflow-hidden group cursor-default shadow-[0_4px_20px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-shadow">
+                                        <div className="absolute -right-6 -top-6 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
+                                        <div className="relative z-10">
+                                          <div className="w-12 h-12 rounded-xl bg-white/60 flex items-center justify-center mb-5 text-indigo-600 shadow-sm">
+                                            <Building2 className="w-6 h-6" />
+                                          </div>
+                                          <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-1">Total Projects</p>
+                                          <p className="text-5xl font-black text-slate-900 tracking-tight">{projects.length}</p>
+                                        </div>
+                                      </div>
+                                      <div className="p-6 rounded-3xl bg-gradient-to-br from-amber-50 to-orange-50/50 border border-amber-100/50 relative overflow-hidden group cursor-default shadow-[0_4px_20px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-shadow">
+                                        <div className="absolute -right-6 -top-6 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
+                                        <div className="relative z-10">
+                                          <div className="w-12 h-12 rounded-xl bg-white/60 flex items-center justify-center mb-5 text-amber-600 shadow-sm">
+                                            <Users className="w-6 h-6" />
+                                          </div>
+                                          <p className="text-xs font-bold text-amber-600 uppercase tracking-widest mb-1">Total Customers</p>
+                                          <p className="text-5xl font-black text-slate-900 tracking-tight">{customers.length}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="mt-12 pt-10 border-t border-slate-100/80">
+                                <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
+                                  <div className="w-8 h-[2px] bg-slate-200"></div>
+                                  About the Builder
+                                </h3>
+                                <p className="text-slate-600 leading-loose font-medium text-lg max-w-3xl">
+                                  Nirman Builders has been a leading construction and real estate development company for over a decade. We are committed to building sustainable, premium quality homes and commercial spaces that transform city skylines and offer modern living environments for our customers.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* CUSTOMER LIST VIEW */}
+                      {activeTab === 'customer' && (
+                        <div className="flex flex-col gap-6">
+                          <div className="flex flex-col sm:flex-row gap-4 items-center">
+                            <div className="w-full sm:w-64">
+                              <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Filter by Type</label>
+                              <CustomSelect
+                                value={customerTypeFilter}
+                                onChange={(val) => { setCustomerTypeFilter(val); setCustomerPage(1); }}
+                                options={[
+                                  { label: 'All Types', value: 'All' },
+                                  { label: 'Flat', value: 'Flat' },
+                                  { label: 'Commercial', value: 'Commercial' },
+                                  { label: 'Society', value: 'Society' }
+                                ]}
+                              />
+                            </div>
+                            <div className="w-full sm:w-64">
+                              <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">Filter by Project</label>
+                              <CustomSelect
+                                value={customerProjectFilter}
+                                onChange={(val) => { setCustomerProjectFilter(val); setCustomerPage(1); }}
+                                options={[
+                                  { label: 'All Projects', value: 'All' },
+                                  ...projects.map(p => ({ label: p.project_name, value: p.id }))
+                                ]}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="overflow-x-auto -mx-4 sm:-mx-0 mt-6">
+                            <table className="w-full text-left border-collapse min-w-[800px]">
+                              <thead>
+                                <tr className="border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
+                                  <th className="pb-4 px-4">Name</th>
+                                  <th className="pb-4 px-4">Contact Details</th>
+                                  <th className="pb-4 px-4">Tower / Flat</th>
+                                  <th className="pb-4 px-4 text-right">Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody className="text-slate-700">
+                                {(() => {
+                                  const filteredCustomers = customers
+                                    .filter(c => customerTypeFilter === 'All' || c.customer_type === customerTypeFilter)
+                                    .filter(c => customerProjectFilter === 'All' || c.project_id === customerProjectFilter);
+
+                                  const currentData = filteredCustomers.slice((customerPage - 1) * customersPerPage, customerPage * customersPerPage);
+
+                                  if (filteredCustomers.length === 0) {
+                                    return (
+                                      <tr>
+                                        <td colSpan={4} className="py-12 text-center text-slate-500 font-medium">
+                                          No customers match the selected filters.
+                                        </td>
+                                      </tr>
+                                    );
+                                  }
+
+                                  return currentData.map((customer) => (
+                                    <tr
+                                      key={customer.id}
+                                      onClick={() => { setSelectedCustomer(customer); setShowCustomerDetailsModal(true); }}
+                                      className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group cursor-pointer"
+                                    >
+                                      <td className="py-5 px-4 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                                        {customer.first_name} {customer.last_name}
+                                        {customer.customer_type && <div className="text-xs font-normal text-slate-500 mt-1">{customer.customer_type}</div>}
+                                      </td>
+                                      <td className="py-5 px-4 text-slate-600 font-medium">
+                                        <div>{customer.email}</div>
+                                        <div className="text-sm text-slate-500 mt-1">{customer.phone || 'N/A'}</div>
+                                      </td>
+                                      <td className="py-5 px-4 text-slate-600 font-medium">
+                                        {customer.tower_name ? (
+                                          <>
+                                            <div className="font-semibold text-slate-800">{customer.tower_name}</div>
+                                            <div className="text-sm text-slate-500 mt-1">
+                                              Floor {customer.floor || '-'} | {customer.customer_type === 'Commercial' ? 'Unit' : 'Flat'} {customer.flat_name || customer.flat_number || '-'}
+                                            </div>
+                                            {(customer.bhk || customer.area_sqft) && (
+                                              <div className="text-xs text-slate-400 mt-1">
+                                                {customer.bhk && <span>{customer.bhk}</span>}
+                                                {customer.bhk && customer.area_sqft && <span> &bull; </span>}
+                                                {customer.area_sqft && <span>{customer.area_sqft} sqft</span>}
+                                              </div>
+                                            )}
+                                          </>
+                                        ) : (
+                                          <span className="text-slate-400 italic">Not Assigned</span>
+                                        )}
+                                      </td>
+                                      <td className="py-5 px-4 text-right">
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); setSelectedCustomer(customer); setShowCustomerDetailsModal(true); }}
+                                          className="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors"
+                                        >
+                                          View
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  ));
+                                })()}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          {/* Pagination Controls */}
+                          {(() => {
+                            const filteredCustomers = customers
+                              .filter(c => customerTypeFilter === 'All' || c.customer_type === customerTypeFilter)
+                              .filter(c => customerProjectFilter === 'All' || c.project_id === customerProjectFilter);
+                            const totalPages = Math.ceil(filteredCustomers.length / customersPerPage);
+
+                            if (filteredCustomers.length === 0) return null;
+
+                            return (
+                              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-2 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                                <div className="flex items-center gap-3">
+                                  <label className="text-sm font-semibold text-slate-600">Show</label>
+                                  <CustomSelect
+                                    value={customersPerPage}
+                                    onChange={(val) => { setCustomersPerPage(Number(val)); setCustomerPage(1); }}
+                                    className="w-24"
+                                    dropdownPosition="top"
+                                    options={[
+                                      { label: '10', value: 10 },
+                                      { label: '25', value: 25 },
+                                      { label: '50', value: 50 },
+                                      { label: '100', value: 100 }
+                                    ]}
+                                  />
+                                  <label className="text-sm font-semibold text-slate-600">entries</label>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    disabled={customerPage === 1}
+                                    onClick={() => setCustomerPage(prev => Math.max(1, prev - 1))}
+                                    className="px-4 py-2 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-blue-600 disabled:opacity-50 disabled:hover:text-slate-700 disabled:cursor-not-allowed transition-all shadow-sm"
+                                  >
+                                    Prev
+                                  </button>
+                                  <div className="px-4 py-2 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-xl shadow-sm">
+                                    {customerPage} / {totalPages}
+                                  </div>
+                                  <button
+                                    disabled={customerPage === totalPages}
+                                    onClick={() => setCustomerPage(prev => Math.min(totalPages, prev + 1))}
+                                    className="px-4 py-2 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-blue-600 disabled:opacity-50 disabled:hover:text-slate-700 disabled:cursor-not-allowed transition-all shadow-sm"
+                                  >
+                                    Next
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      )}
+                      {/* PROJECT LIST VIEW */}
+                      {activeTab === 'project' && !activeProjectSubTab && (
+                        <div className="flex flex-col gap-6">
+                          {/* Filters */}
+                          <div className="flex flex-col sm:flex-row items-center gap-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                            <div className="w-full sm:w-1/3">
+                              <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-widest">Filter by Type</label>
+                              <CustomSelect
+                                value={projectTypeFilter}
+                                onChange={(val) => { setProjectTypeFilter(val); setProjectNameSearch(''); setProjectPage(1); }}
+                                options={[
+                                  { label: 'All Types', value: 'All' },
+                                  { label: 'Flat', value: 'Flat' },
+                                  { label: 'Commercial', value: 'Commercial' },
+                                  { label: 'Society', value: 'Society' }
+                                ]}
+                              />
+                            </div>
+                            <div className="w-full sm:w-2/3">
+                              <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-widest">Filter by Name</label>
+                              <CustomSelect
+                                value={projectNameSearch}
+                                onChange={(val) => { setProjectNameSearch(val); setProjectPage(1); }}
+                                placeholder="All Projects"
+                                options={[
+                                  { label: 'All Projects', value: '' },
+                                  ...projects
+                                    .filter(p => projectTypeFilter === 'All' || p.project_type === projectTypeFilter)
+                                    .map(p => ({ label: p.project_name, value: p.project_name }))
+                                ]}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="overflow-x-auto -mx-4 sm:-mx-0">
+                            <table className="w-full text-left border-collapse min-w-[600px]">
+                              <thead>
+                                <tr className="border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
+                                  <th className="pb-4 px-4">Project Name</th>
+                                  <th className="pb-4 px-4">Location</th>
+                                  <th className="pb-4 px-4">Expected Possession</th>
+                                  <th className="pb-4 px-4 text-right">Status</th>
+                                  <th className="pb-4 px-4 text-right">Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody className="text-slate-700">
+                                {(() => {
+                                  const filteredProjects = projects
+                                    .filter(p => projectTypeFilter === 'All' || p.project_type === projectTypeFilter)
+                                    .filter(p => projectNameSearch === '' || p.project_name === projectNameSearch);
+
+                                  const currentData = filteredProjects.slice((projectPage - 1) * projectsPerPage, projectPage * projectsPerPage);
+
+                                  if (filteredProjects.length === 0) {
+                                    return (
+                                      <tr>
+                                        <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
+                                          No projects found matching the filters.
+                                        </td>
+                                      </tr>
+                                    );
+                                  }
+
+                                  return currentData.map((project) => (
+                                    <tr
+                                      key={project.id}
+                                      onClick={() => openProjectDetails(project)}
+                                      className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group cursor-pointer"
+                                    >
+                                      <td className="py-5 px-4 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                                        {project.project_name}
+                                      </td>
+                                      <td className="py-5 px-4 text-slate-600 font-medium">{project.location || 'N/A'}</td>
+                                      <td className="py-5 px-4 text-slate-600 font-medium">{project.expected_possession || project.expectedPossession || 'N/A'}</td>
+                                      <td className="py-5 px-4 text-right">
+                                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-extrabold tracking-wider border ${project.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                                          project.status === 'Under Construction' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                                            'bg-blue-50 text-blue-600 border-blue-200'
+                                          }`}>
+                                          {project.status || 'Planning'}
+                                        </span>
+                                      </td>
+                                      <td className="py-5 px-4 text-right">
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); openProjectDetails(project); }}
+                                          className="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors"
+                                        >
+                                          View
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  ));
+                                })()}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          {/* Pagination Controls */}
+                          {(() => {
+                            const filteredProjects = projects
+                              .filter(p => projectTypeFilter === 'All' || p.project_type === projectTypeFilter)
+                              .filter(p => projectNameSearch === '' || p.project_name === projectNameSearch);
+                            const totalPages = Math.ceil(filteredProjects.length / projectsPerPage);
+
+                            if (filteredProjects.length === 0) return null;
+
+                            return (
+                              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-2 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                                <div className="flex items-center gap-3">
+                                  <label className="text-sm font-semibold text-slate-600">Show</label>
+                                  <CustomSelect
+                                    value={projectsPerPage}
+                                    onChange={(val) => { setProjectsPerPage(Number(val)); setProjectPage(1); }}
+                                    className="w-24"
+                                    dropdownPosition="top"
+                                    options={[
+                                      { label: '10', value: 10 },
+                                      { label: '25', value: 25 },
+                                      { label: '50', value: 50 },
+                                      { label: '100', value: 100 }
+                                    ]}
+                                  />
+                                  <label className="text-sm font-semibold text-slate-600">entries</label>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    disabled={projectPage === 1}
+                                    onClick={() => setProjectPage(prev => Math.max(1, prev - 1))}
+                                    className="px-4 py-2 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-blue-600 disabled:opacity-50 disabled:hover:text-slate-700 disabled:cursor-not-allowed transition-all shadow-sm"
+                                  >
+                                    Prev
+                                  </button>
+                                  <div className="px-4 py-2 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-xl shadow-sm">
+                                    {projectPage} / {totalPages}
+                                  </div>
+                                  <button
+                                    disabled={projectPage === totalPages}
+                                    onClick={() => setProjectPage(prev => Math.min(totalPages, prev + 1))}
+                                    className="px-4 py-2 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-blue-600 disabled:opacity-50 disabled:hover:text-slate-700 disabled:cursor-not-allowed transition-all shadow-sm"
+                                  >
+                                    Next
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                </>
+              )}
+              </motion.div>
             )}
-          </div>
+          </AnimatePresence>
         </main>
       </div>
 
@@ -2421,42 +2748,42 @@ export default function BuilderDashboard() {
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              
+
               <div className="p-6 sm:p-8 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-slate-700">Company Name</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={editProfileData.company_name}
-                      onChange={(e) => setEditProfileData({...editProfileData, company_name: e.target.value})}
+                      onChange={(e) => setEditProfileData({ ...editProfileData, company_name: e.target.value })}
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all font-medium"
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-slate-700">Email Address</label>
-                    <input 
-                      type="email" 
+                    <input
+                      type="email"
                       value={editProfileData.email}
-                      onChange={(e) => setEditProfileData({...editProfileData, email: e.target.value})}
+                      onChange={(e) => setEditProfileData({ ...editProfileData, email: e.target.value })}
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all font-medium"
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-slate-700">Phone Number</label>
-                    <input 
-                      type="tel" 
+                    <input
+                      type="tel"
                       value={editProfileData.phone}
-                      onChange={(e) => setEditProfileData({...editProfileData, phone: e.target.value})}
+                      onChange={(e) => setEditProfileData({ ...editProfileData, phone: e.target.value })}
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all font-medium"
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">About the Builder</label>
-                  <textarea 
+                  <textarea
                     value={editProfileData.about}
-                    onChange={(e) => setEditProfileData({...editProfileData, about: e.target.value})}
+                    onChange={(e) => setEditProfileData({ ...editProfileData, about: e.target.value })}
                     rows={4}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all font-medium resize-none"
                   />
@@ -2464,13 +2791,13 @@ export default function BuilderDashboard() {
               </div>
 
               <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
-                <button 
+                <button
                   onClick={() => setShowEditProfileModal(false)}
                   className="px-6 py-2.5 text-slate-600 font-semibold hover:bg-slate-200 rounded-xl transition-colors"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     const newBuilder = {
                       ...builders[0],
