@@ -203,8 +203,23 @@ export default function BuilderDashboard() {
   const [showCustomerDetailsModal, setShowCustomerDetailsModal] = useState(false);
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
   const [editProfileData, setEditProfileData] = useState({ company_name: '', email: '', phone: '', about: '' });
-  const [selectedProjectForSidebar, setSelectedProjectForSidebar] = useState<any>(null);
-  const [activeProjectSubTab, setActiveProjectSubTab] = useState<'progress' | 'announcement' | 'flats' | 'staff' | null>(null);
+  const [selectedProjectForSidebar, setSelectedProjectForSidebar] = useState<any>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const projectId = params.get('projectId');
+      if (projectId) return { id: projectId, _id: projectId, project_name: 'Loading Project Data...' };
+    }
+    return null;
+  });
+  const [activeProjectSubTab, setActiveProjectSubTab] = useState<'progress' | 'announcement' | 'flats' | 'staff' | null>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('projectId')) {
+        return (params.get('subTab') as any) || 'progress';
+      }
+    }
+    return null;
+  });
   const [selectedTowerForProgress, setSelectedTowerForProgress] = useState<any>(null);
   const [selectedFloorForProgress, setSelectedFloorForProgress] = useState<number | null>(null);
 
@@ -353,19 +368,7 @@ export default function BuilderDashboard() {
     }
   }, [selectedProjectForSidebar]);
 
-  // Sync tower object once towers are loaded based on URL param
-  useEffect(() => {
-    if (towers.length > 0) {
-      const params = new URLSearchParams(window.location.search);
-      const urlTowerId = params.get('towerId');
-      if (urlTowerId) {
-        const tower = towers.find(t => t.id === urlTowerId || t._id === urlTowerId);
-        if (tower) {
-          setSelectedTowerForProgress(tower);
-        }
-      }
-    }
-  }, [towers]);
+  // Tower restoration from URL is now handled inside fetchTowers after bulk-progress loads
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -475,7 +478,23 @@ export default function BuilderDashboard() {
     try {
       const res = await fetch('/api/admin/project');
       const data = await res.json();
-      if (data.success) setProjects(data.projects);
+      if (data.success) {
+        setProjects(data.projects);
+        
+        // Restore project subtab state if exists
+        const params = new URLSearchParams(window.location.search);
+        const projectId = params.get('projectId');
+        if (projectId) {
+          const foundProject = data.projects.find((p: any) => p.id === projectId || p._id === projectId);
+          if (foundProject) {
+            setSelectedProjectForSidebar(foundProject);
+            const subTab = params.get('subTab');
+            if (subTab) setActiveProjectSubTab(subTab as any);
+            const floor = params.get('floor');
+            if (floor) setSelectedFloorForProgress(Number(floor));
+          }
+        }
+      }
     } catch (err) {
       console.error('Failed to load projects', err);
     }
@@ -499,6 +518,22 @@ export default function BuilderDashboard() {
           const bulkData = await bulkRes.json();
           if (bulkData.success) {
             setTowerProgressMap(bulkData.towerProgressMap || {});
+          }
+
+          // Restore tower + floor selection from URL on page refresh
+          if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const urlTowerId = params.get('towerId');
+            if (urlTowerId) {
+              const foundTower = fetchedTowers.find((t: any) => t.id === urlTowerId || t._id === urlTowerId);
+              if (foundTower) {
+                setSelectedTowerForProgress(foundTower);
+                const urlFloor = params.get('floor');
+                if (urlFloor) {
+                  setSelectedFloorForProgress(Number(urlFloor));
+                }
+              }
+            }
           }
         } else {
           setTowerProgressMap({});
@@ -837,6 +872,14 @@ export default function BuilderDashboard() {
     }
   };
 
+  if (!hasHydrated) {
+    return (
+      <div className="h-screen w-full bg-[#f4f7f9] flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen w-full bg-[#f4f7f9] flex flex-col text-slate-800 overflow-hidden font-sans selection:bg-blue-500/20">
 
@@ -963,11 +1006,7 @@ export default function BuilderDashboard() {
         {/* Content Area */}
         <main className="flex-1 overflow-y-auto p-8 lg:p-12 relative">
           <AnimatePresence mode="wait">
-            {!hasHydrated ? (
-              <motion.div key="hydration-loader" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="w-full min-h-[400px] flex items-center justify-center">
-                <div className="w-10 h-10 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
-              </motion.div>
-            ) : isDataLoading && !activeProjectSubTab ? (
+            {isDataLoading && !activeProjectSubTab ? (
               <MainAreaSkeleton key="main-skeleton" />
             ) : (
               <motion.div key="main-content" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full max-w-none">
@@ -1150,7 +1189,7 @@ export default function BuilderDashboard() {
                     </div>
                     <div className="flex flex-col justify-center pt-2 relative z-10">
                       <h1 className="text-4xl font-black tracking-tight text-slate-900 mb-2 flex items-center gap-3">
-                        {activeTab === 'builder' ? 'Builder Matrix' : activeTab === 'customer' ? 'Customer' : 'Project'}
+                        {activeTab === 'builder' ? 'Builder ' : activeTab === 'customer' ? 'Customer' : 'Project'}
                       </h1>
                       <p className="text-sm font-semibold text-slate-500 max-w-2xl leading-relaxed">
                         {activeTab === 'builder'

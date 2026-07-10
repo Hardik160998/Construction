@@ -1,15 +1,88 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Building2, Plus, LogOut, CheckCircle2, AlertCircle, Users, HardHat, MapPin, Sparkles, ChevronRight, List, X, UploadCloud, Image as ImageIcon, Briefcase, CreditCard, BarChart2, ArrowRightLeft, TrendingUp, Megaphone, Building, MessageSquare } from 'lucide-react';
+import { Building2, Plus, LogOut, CheckCircle2, AlertCircle, Users, HardHat, MapPin, Sparkles, ChevronRight, List, X, UploadCloud, Image as ImageIcon, Briefcase, CreditCard, BarChart2, ArrowRightLeft, TrendingUp, Megaphone, Building, MessageSquare, ArrowLeft, Camera, ChevronLeft, ExternalLink, Layers, Zap, Droplets, LayoutGrid, Home, Package, Wrench } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePathname } from 'next/navigation';
+import CustomSelect from '@/components/CustomSelect';
+import FloorList from '@/components/FloorList';
+import TowerProgress from '@/components/TowerProgress';
+
+// ── Shimmer Skeletons ──────────────────────────────────────────────────────────
+const FloorListSkeleton = () => (
+  <div className="w-full">
+    <div className="mb-10 flex items-center justify-between bg-white p-6 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/80 relative overflow-hidden">
+      <div className="flex items-center gap-6 relative z-10">
+        <div className="flex items-center gap-5">
+          <div className="w-14 h-14 bg-slate-200 rounded-2xl animate-pulse"></div>
+          <div className="flex flex-col justify-center gap-2">
+            <div className="h-8 w-48 bg-slate-200 rounded-md animate-pulse"></div>
+            <div className="h-4 w-64 bg-slate-200 rounded-md animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+      {[1,2,3,4,5,6,7,8,9,10,11,12].map((i) => (
+        <div key={i} className="relative w-full bg-white border border-slate-200 rounded-2xl p-6 pt-8 h-32 animate-pulse flex flex-col items-center justify-center gap-3">
+          <div className="w-12 h-12 bg-slate-200 rounded-full"></div>
+          <div className="h-4 w-16 bg-slate-200 rounded-md"></div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const TowerProgressSkeleton = () => (
+  <div className="w-full">
+    <div className="mb-10 flex items-center justify-between bg-white p-6 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/80">
+      <div className="flex items-center gap-5">
+        <div className="w-14 h-14 bg-slate-200 rounded-2xl animate-pulse"></div>
+        <div className="flex flex-col justify-center gap-2">
+          <div className="h-8 w-48 bg-slate-200 rounded-md animate-pulse"></div>
+          <div className="h-4 w-64 bg-slate-200 rounded-md animate-pulse"></div>
+        </div>
+      </div>
+    </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      {[1,2,3,4,5,6].map((i) => (
+        <div key={i} className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between animate-pulse h-48">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-slate-200 rounded-xl"></div>
+                <div className="h-6 w-32 bg-slate-200 rounded-md"></div>
+              </div>
+              <div className="h-6 w-20 bg-slate-200 rounded-lg"></div>
+            </div>
+          </div>
+          <div className="mt-auto">
+            <div className="h-10 w-full bg-slate-100 rounded-xl"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+// ──────────────────────────────────────────────────────────────────────────────
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'builder' | 'customer' | 'project' | 'inquiry'>('builder');
+  const pathname = usePathname();
+  const [hasHydrated, setHasHydrated] = useState(false);
+  
+  const [activeTab, setActiveTab] = useState<'builder' | 'customer' | 'project' | 'inquiry'>(() => {
+    if (typeof window !== 'undefined') {
+      if (pathname?.includes('/customer')) return 'customer';
+      if (pathname?.includes('/project')) return 'project';
+      if (pathname?.includes('/inquiry')) return 'inquiry';
+    }
+    return 'builder';
+  });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   
@@ -18,6 +91,7 @@ export default function AdminDashboard() {
   const [customers, setCustomers] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [towers, setTowers] = useState<any[]>([]);
+  const [isTowersLoading, setIsTowersLoading] = useState(false);
   const [towerProgressMap, setTowerProgressMap] = useState<Record<string, number>>({});
   const [inquiries, setInquiries] = useState<any[]>([]);
 
@@ -37,10 +111,42 @@ export default function AdminDashboard() {
   const [selectedInquiry, setSelectedInquiry] = useState<any>(null);
   const [showInquiryDetailsModal, setShowInquiryDetailsModal] = useState(false);
   
+  const [selectedBuilder, setSelectedBuilder] = useState<any>(null);
+  const [showBuilderDetailsModal, setShowBuilderDetailsModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [showCustomerDetailsModal, setShowCustomerDetailsModal] = useState(false);
-  const [selectedProjectForSidebar, setSelectedProjectForSidebar] = useState<any>(null);
-  const [activeProjectSubTab, setActiveProjectSubTab] = useState<'progress' | 'announcement' | 'flats' | 'staff' | null>(null);
+  const [selectedProjectForSidebar, setSelectedProjectForSidebar] = useState<any>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const projectId = params.get('projectId');
+      if (projectId) return { id: projectId, _id: projectId, project_name: 'Loading Project Data...' };
+    }
+    return null;
+  });
+  const [activeProjectSubTab, setActiveProjectSubTab] = useState<'progress' | 'announcement' | 'tower_view' | 'staff' | null>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('projectId')) {
+        return (params.get('subtab') as any) || 'progress';
+      }
+    }
+    return null;
+  });
+  const [selectedTowerForView, setSelectedTowerForView] = useState<any>(null);
+  const [selectedFloorForView, setSelectedFloorForView] = useState<number | null>(null);
+  const [showProjectImgAnalysis, setShowProjectImgAnalysis] = useState(false);
+
+  // Pagination States
+  const [builderPage, setBuilderPage] = useState(1);
+  const [builderPerPage, setBuilderPerPage] = useState(10);
+  const [customerPage, setCustomerPage] = useState(1);
+  const [customerPerPage, setCustomerPerPage] = useState(10);
+  const [projectPage, setProjectPage] = useState(1);
+  const [projectPerPage, setProjectPerPage] = useState(10);
+  const [projectBuilderFilter, setProjectBuilderFilter] = useState('');
+  const [builderCompanyFilter, setBuilderCompanyFilter] = useState('');
+  const [customerBuilderFilter, setCustomerBuilderFilter] = useState('');
+  const [builderSort, setBuilderSort] = useState<{ field: 'company_name' | 'contact_name', order: 'asc' | 'desc' } | null>(null);
 
   // Form States
   const [builderData, setBuilderData] = useState({
@@ -72,10 +178,17 @@ export default function AdminDashboard() {
   }, [selectedProjectForSidebar]);
 
   useEffect(() => {
-    fetchBuilders();
-    fetchCustomers();
-    fetchProjects();
-    fetchInquiries();
+    const fetchInitialData = async () => {
+      setIsLoading(true);
+      await Promise.all([
+        fetchBuilders(),
+        fetchCustomers(),
+        fetchProjects(),
+        fetchInquiries()
+      ]);
+      setIsLoading(false);
+    };
+    fetchInitialData();
 
     const handlePopState = () => {
       const pathname = window.location.pathname;
@@ -95,6 +208,8 @@ export default function AdminDashboard() {
 
     // Initial check
     handlePopState();
+
+    setHasHydrated(true);
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -124,7 +239,21 @@ export default function AdminDashboard() {
     try {
       const res = await fetch('/api/admin/project');
       const data = await res.json();
-      if (data.success) setProjects(data.projects);
+      if (data.success) {
+        setProjects(data.projects);
+        
+        // Restore project subtab state if exists
+        const params = new URLSearchParams(window.location.search);
+        const projectId = params.get('projectId');
+        if (projectId) {
+          const foundProject = data.projects.find((p: any) => p.id === projectId || p._id === projectId);
+          if (foundProject) {
+            setSelectedProjectForSidebar(foundProject);
+            const subtab = params.get('subtab');
+            if (subtab) setActiveProjectSubTab(subtab as any);
+          }
+        }
+      }
     } catch (err) {
       console.error('Failed to load projects', err);
     }
@@ -141,6 +270,7 @@ export default function AdminDashboard() {
   };
 
   const fetchTowers = async (projectId: string) => {
+    setIsTowersLoading(true);
     try {
       const res = await fetch(`/api/admin/tower?projectId=${projectId}`);
       const data = await res.json();
@@ -159,12 +289,30 @@ export default function AdminDashboard() {
           if (bulkData.success) {
             setTowerProgressMap(bulkData.towerProgressMap || {});
           }
+          
+          // Restore tower selection from URL if present
+          if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const towerId = params.get('towerId');
+            if (towerId) {
+              const foundTower = fetchedTowers.find((t: any) => t.id === towerId || t._id === towerId);
+              if (foundTower) {
+                setSelectedTowerForView(foundTower);
+                const floor = params.get('floor');
+                if (floor) {
+                  setSelectedFloorForView(parseInt(floor));
+                }
+              }
+            }
+          }
         } else {
           setTowerProgressMap({});
         }
       }
     } catch (err) {
       console.error('Failed to load towers', err);
+    } finally {
+      setIsTowersLoading(false);
     }
   };
 
@@ -381,11 +529,14 @@ export default function AdminDashboard() {
   };
 
   const menuItems = [
-    { id: 'builder', label: 'Builder Matrix', icon: HardHat },
+    { id: 'builder', label: 'Builder', icon: HardHat },
     { id: 'customer', label: 'Customer', icon: Users },
     { id: 'project', label: 'Project', icon: MapPin },
     { id: 'inquiry', label: 'Inquiries', icon: MessageSquare }
   ] as const;
+
+  // We add ArrowLeft to the icons imported from lucide-react if not present, wait it is imported? 
+  // Let's make sure ArrowLeft is imported.
 
   const handleTabChange = (tabId: 'builder' | 'customer' | 'project' | 'inquiry') => {
     setActiveTab(tabId);
@@ -403,6 +554,14 @@ export default function AdminDashboard() {
                   : '/superadmin/builder-matrix';
     window.history.pushState(null, '', newPath);
   };
+
+  if (!hasHydrated) {
+    return (
+      <div className="h-screen w-full bg-[#f4f7f9] flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen w-full bg-[#f4f7f9] flex flex-col text-slate-800 overflow-hidden font-sans selection:bg-blue-500/20">
@@ -486,36 +645,38 @@ export default function AdminDashboard() {
                             <Briefcase className="w-[18px] h-[18px] text-blue-600 shrink-0" />
                             <span className="text-[14px] font-bold text-slate-700 truncate pr-2">{selectedProjectForSidebar.project_name}</span>
                           </div>
-                          <button onClick={(e) => { e.stopPropagation(); setSelectedProjectForSidebar(null); setActiveProjectSubTab(null); }} className="p-1 bg-white border border-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors shadow-sm shrink-0 flex items-center justify-center">
+                          <button onClick={(e) => { 
+                            e.stopPropagation(); 
+                            setSelectedProjectForSidebar(null); 
+                            setActiveProjectSubTab(null); 
+                            window.history.pushState(null, '', '/superadmin/project');
+                          }} className="p-1 bg-white border border-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors shadow-sm shrink-0 flex items-center justify-center">
                             <X className="w-3.5 h-3.5" />
                           </button>
                         </div>
                         
                         <div className="flex flex-col gap-1 relative before:absolute before:left-[22px] before:top-2 before:bottom-4 before:w-[1.5px] before:bg-slate-100/80 before:rounded-full">
-                          <button onClick={() => setActiveProjectSubTab('progress')} className={`w-full flex items-center gap-4 px-4 py-3 relative z-10 group transition-all rounded-xl ${activeProjectSubTab === 'progress' ? 'bg-blue-50/50' : ''}`}>
+                          <button onClick={() => {
+                            setActiveProjectSubTab('progress');
+                            window.history.pushState(null, '', `/superadmin/project?projectId=${selectedProjectForSidebar?.id || selectedProjectForSidebar?._id}&subtab=progress`);
+                          }} className={`w-full flex items-center gap-4 px-4 py-3 relative z-10 group transition-all rounded-xl ${activeProjectSubTab === 'progress' ? 'bg-blue-50/50' : ''}`}>
                             <div className="bg-[#f4f7f9] z-10 relative"><TrendingUp className={`w-[18px] h-[18px] transition-colors ${activeProjectSubTab === 'progress' ? 'text-blue-600' : 'text-slate-500 group-hover:text-blue-500'}`} /></div>
                             <span className={`text-[14.5px] font-bold transition-colors ${activeProjectSubTab === 'progress' ? 'text-blue-700' : 'text-slate-600 group-hover:text-slate-800'}`}>Progress</span>
                           </button>
-                          <button onClick={() => setActiveProjectSubTab('announcement')} className={`w-full flex items-center gap-4 px-4 py-3 relative z-10 group transition-all rounded-xl ${activeProjectSubTab === 'announcement' ? 'bg-blue-50/50' : ''}`}>
+                          <button onClick={() => {
+                            setActiveProjectSubTab('announcement');
+                            window.history.pushState(null, '', `/superadmin/project?projectId=${selectedProjectForSidebar?.id || selectedProjectForSidebar?._id}&subtab=announcement`);
+                          }} className={`w-full flex items-center gap-4 px-4 py-3 relative z-10 group transition-all rounded-xl ${activeProjectSubTab === 'announcement' ? 'bg-blue-50/50' : ''}`}>
                             <div className="bg-[#f4f7f9] z-10 relative"><Megaphone className={`w-[18px] h-[18px] transition-colors ${activeProjectSubTab === 'announcement' ? 'text-blue-600' : 'text-slate-500 group-hover:text-blue-500'}`} /></div>
                             <span className={`text-[14.5px] font-bold transition-colors ${activeProjectSubTab === 'announcement' ? 'text-blue-700' : 'text-slate-600 group-hover:text-slate-800'}`}>Announcement</span>
                           </button>
 
-                          <button onClick={() => setActiveProjectSubTab('staff')} className={`w-full flex items-center gap-4 px-4 py-3 relative z-10 group transition-all rounded-xl ${activeProjectSubTab === 'staff' ? 'bg-blue-50/50' : ''}`}>
+                          <button onClick={() => {
+                            setActiveProjectSubTab('staff');
+                            window.history.pushState(null, '', `/superadmin/project?projectId=${selectedProjectForSidebar?.id || selectedProjectForSidebar?._id}&subtab=staff`);
+                          }} className={`w-full flex items-center gap-4 px-4 py-3 relative z-10 group transition-all rounded-xl ${activeProjectSubTab === 'staff' ? 'bg-blue-50/50' : ''}`}>
                             <div className="bg-[#f4f7f9] z-10 relative"><Users className={`w-[18px] h-[18px] transition-colors ${activeProjectSubTab === 'staff' ? 'text-blue-600' : 'text-slate-500 group-hover:text-blue-500'}`} /></div>
-                            <span className={`text-[14.5px] font-bold transition-colors ${activeProjectSubTab === 'staff' ? 'text-blue-700' : 'text-slate-600 group-hover:text-slate-800'}`}>Staff</span>
-                          </button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              );
-            })}
-          </div>
-        </aside>
-
-        {/* Content Area */}
+                            <span className={`text-[14.5px] font-bold transition-colors ${activeProjectSubTab === 'staff' ? 'text-blue-700' : 'text-slate-600 group-hover:text-slate-800'}`}>Sta        {/* Content Area */}
         <main className="flex-1 overflow-y-auto p-8 lg:p-12 relative">
            <div className="w-full max-w-none">
               
@@ -523,52 +684,155 @@ export default function AdminDashboard() {
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6 mt-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <button onClick={() => setActiveProjectSubTab(null)} className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-slate-700 shadow-sm transition-colors">
+                      <button onClick={() => {
+                        setActiveProjectSubTab(null);
+                        window.history.pushState(null, '', `/superadmin/project?projectId=${selectedProjectForSidebar?.id || selectedProjectForSidebar?._id}`);
+                      }} className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-slate-700 shadow-sm transition-colors">
                         <ChevronRight className="w-5 h-5 rotate-180" />
                       </button>
-                      <div>
-                        <h2 className="text-2xl font-extrabold text-slate-900 capitalize flex items-center gap-2">
-                          {activeProjectSubTab === 'announcement' ? 'Announcements' : selectedProjectForSidebar.project_name}
-                        </h2>
-                        <p className="text-sm font-medium text-slate-500 mt-1">
-                          {activeProjectSubTab === 'announcement' ? 'View announcements for this project' : (
-                            <>Location: <span className="font-semibold text-slate-700">{selectedProjectForSidebar.location || 'N/A'}</span></>
-                          )}
-                        </p>
-                      </div>
+                      {activeProjectSubTab !== 'tower_view' && (
+                        <div>
+                          <h2 className="text-2xl font-extrabold text-slate-900 capitalize flex items-center gap-2">
+                            {activeProjectSubTab === 'announcement' ? 'Announcements' : selectedProjectForSidebar.project_name}
+                          </h2>
+                          <p className="text-sm font-medium text-slate-500 mt-1">
+                            {activeProjectSubTab === 'announcement' ? 'View announcements for this project' : (
+                              <>Location: <span className="font-semibold text-slate-700">{selectedProjectForSidebar.location || 'N/A'}</span></>
+                            )}
+                          </p>
+                        </div>
+                      )}
                     </div>
-
+                    {activeProjectSubTab === 'progress' && towers.length > 0 && (
+                      <button
+                        onClick={() => setShowProjectImgAnalysis(true)}
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white text-sm font-bold shadow-md transition-all"
+                      >
+                        <Camera className="w-4 h-4" />
+                        Img Analysis
+                      </button>
+                    )}
+                  </div>
+n className="font-semibold text-slate-700">{selectedProjectForSidebar.location || 'N/A'}</span></>
+                            )}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  {activeProjectSubTab === 'progress' && towers.length > 0 ? (
-                    <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {towers.map(tower => (
-                        <Link 
-                          key={tower.id} 
-                          href={`/superadmin/tower/${encodeURIComponent(tower.tower_name)}?id=${tower.id}`}
-                          className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow group flex items-center justify-between cursor-pointer hover:border-blue-300 block"
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                              <Building className="w-6 h-6" />
+                  {activeProjectSubTab === 'progress' ? (
+                    isTowersLoading ? (
+                      <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                          <div key={i} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 bg-slate-200 rounded-xl animate-pulse"></div>
+                              <div>
+                                <div className="h-5 w-24 bg-slate-200 rounded-md animate-pulse mb-1.5"></div>
+                                <div className="h-3 w-16 bg-slate-200 rounded-md animate-pulse"></div>
+                              </div>
                             </div>
-                            <div>
-                              <h3 className="text-xl font-bold text-slate-900 mb-0.5">{tower.tower_name}</h3>
-                              <p className="text-sm font-semibold text-slate-500">{tower.total_floors} Floors</p>
+                            <div className="flex flex-col items-end gap-1">
+                              <div className="h-8 w-12 bg-slate-200 rounded-md animate-pulse"></div>
+                              <div className="h-2 w-14 bg-slate-200 rounded-md animate-pulse"></div>
                             </div>
                           </div>
+                        ))}
+                      </div>
+                    ) : towers.length > 0 ? (
+                      <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {towers.map(tower => (
+                          <div 
+                            key={tower.id} 
+                            onClick={() => { 
+                              setSelectedTowerForView(tower); 
+                              setSelectedFloorForView(null); 
+                              setActiveProjectSubTab('tower_view'); 
+                              const url = new URL(window.location.href);
+                              url.searchParams.set('subtab', 'tower_view');
+                              url.searchParams.set('towerId', tower.id || tower._id);
+                              url.searchParams.delete('floor');
+                              window.history.pushState(null, '', url.toString());
+                            }}
+                            className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow group flex items-center justify-between cursor-pointer hover:border-blue-300 block"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                                <Building className="w-6 h-6" />
+                              </div>
+                              <div>
+                                <h3 className="text-xl font-bold text-slate-900 mb-0.5">{tower.tower_name}</h3>
+                                <p className="text-sm font-semibold text-slate-500">{tower.total_floors} Floors</p>
+                              </div>
+                            </div>
 
-                          <div className="flex flex-col items-end gap-1">
-                            <span className="text-2xl font-black text-emerald-600 tracking-tight">
-                              {towerProgressMap[tower.id] || 0}%
-                            </span>
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                              Completed
-                            </span>
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="text-2xl font-black text-emerald-600 tracking-tight">
+                                {towerProgressMap[tower.id] || 0}%
+                              </span>
+                              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                                Completed
+                              </span>
+                            </div>
                           </div>
-                        </Link>
-                      ))}
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="mt-8 py-16 bg-slate-50/50 border border-slate-200/60 border-dashed rounded-3xl flex flex-col items-center justify-center text-center px-4">
+                        <div className="w-16 h-16 bg-white border border-slate-200 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+                          <Building className="w-8 h-8 text-slate-300" />
+                        </div>
+                        <h3 className="text-lg font-extrabold text-slate-900 mb-2">No Towers or Sections Found</h3>
+                        <p className="text-slate-500 max-w-sm">This project doesn't have any towers or commercial sections initialized yet.</p>
+                      </div>
+                    )
+                  ) : activeProjectSubTab === 'tower_view' ? (
+                    !selectedTowerForView 
+                      ? (selectedFloorForView !== null || (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('floor'))
+                          ? <TowerProgressSkeleton key="tower-progress-sk" />
+                          : <FloorListSkeleton key="floor-list-sk" />)
+                      : (
+                    <div className="mt-4">
+                      {selectedFloorForView ? (
+                        <TowerProgress
+                          towerId={selectedTowerForView.id}
+                          towerName={selectedTowerForView.tower_name}
+                          floorNumber={selectedFloorForView}
+                          unitType={selectedTowerForView.total_houses ? 'House' : 'Floor'}
+                          onBack={() => {
+                            setSelectedFloorForView(null);
+                            const url = new URL(window.location.href);
+                            url.searchParams.delete('floor');
+                            window.history.pushState(null, '', url.toString());
+                          }}
+                        />
+                      ) : (
+                        <FloorList
+                          towerId={selectedTowerForView.id}
+                          towerName={selectedTowerForView.tower_name}
+                          totalFloors={selectedTowerForView.total_floors || selectedTowerForView.total_houses || 0}
+                          numberSeries={selectedTowerForView.number_series}
+                          unitType={selectedTowerForView.total_houses ? 'House' : 'Floor'}
+                          onSelectFloor={(floor) => {
+                            setSelectedFloorForView(floor);
+                            const url = new URL(window.location.href);
+                            url.searchParams.set('floor', floor.toString());
+                            window.history.pushState(null, '', url.toString());
+                          }}
+                          onBack={() => { 
+                            setActiveProjectSubTab('progress'); 
+                            setSelectedTowerForView(null); 
+                            const url = new URL(window.location.href);
+                            url.searchParams.set('subtab', 'progress');
+                            url.searchParams.delete('towerId');
+                            url.searchParams.delete('floor');
+                            window.history.pushState(null, '', url.toString());
+                          }}
+                        />
+                      )}
                     </div>
+                    )
                   ) : activeProjectSubTab === 'announcement' && announcements.length > 0 ? (
                     <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                       {announcements.map((ann) => (
@@ -625,41 +889,86 @@ export default function AdminDashboard() {
                   {/* Header */}
               <motion.div 
                 key={`header-${activeTab}`}
-                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
-                className="mb-12"
+                initial={{ opacity: isLoading ? 1 : 0, y: isLoading ? 0 : 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
+                className="mb-10 relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-900 via-indigo-900 to-slate-900 p-8 sm:p-10 shadow-2xl border border-white/10"
               >
-                <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 mb-3 flex items-center gap-3">
-                  <span className="font-extrabold text-3xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
-                    {activeTab === 'builder' ? 'Builder Matrix' : activeTab === 'customer' ? 'Customer' : activeTab === 'inquiry' ? 'Inquiries' : 'Project'}
-                  </span>
-                  <div className="h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]" />
-                </h1>
-                <p className="text-sm font-medium text-slate-500 mt-2">
-                    {activeTab === 'builder' 
-                    ? 'Deploy new construction companies to the SuperAdmin ecosystem.' 
-                    : activeTab === 'customer' 
-                      ? 'Integrate new buyers and assign them directly to active builders.'
-                      : activeTab === 'inquiry'
-                        ? 'View and manage contact inquiries from the website.'
-                        : 'Initialize new real estate projects for the global tracker.'}
-                </p>
+                {/* Decorative background elements */}
+                <div className="absolute top-0 right-0 w-72 h-72 bg-blue-500/20 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/3" />
+                <div className="absolute bottom-0 left-0 w-72 h-72 bg-violet-500/20 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/3" />
+                
+                <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                  <div>
+                    <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-2 flex items-center gap-4">
+                      <div className="p-3 bg-white/10 rounded-2xl border border-white/10 backdrop-blur-md shadow-[0_4px_24px_rgba(0,0,0,0.2)]">
+                        {activeTab === 'builder' ? <HardHat className="w-8 h-8 text-blue-400" /> : 
+                         activeTab === 'customer' ? <Users className="w-8 h-8 text-blue-400" /> : 
+                         activeTab === 'inquiry' ? <MessageSquare className="w-8 h-8 text-blue-400" /> : 
+                         <MapPin className="w-8 h-8 text-blue-400" />}
+                      </div>
+                      <span className="drop-shadow-sm">
+                        {activeTab === 'builder' ? 'Builders' : activeTab === 'customer' ? 'Customers' : activeTab === 'inquiry' ? 'Inquiries' : 'Projects'}
+                      </span>
+                    </h1>
+                    <p className="text-[15px] font-medium text-blue-100/80 mt-4 max-w-2xl leading-relaxed">
+                        {activeTab === 'builder' 
+                        ? 'Deploy new construction companies to the SuperAdmin ecosystem.' 
+                        : activeTab === 'customer' 
+                          ? 'Integrate new buyers and assign them directly to active builders.'
+                          : activeTab === 'inquiry'
+                            ? 'View and manage contact inquiries from the website.'
+                            : 'Initialize new real estate projects for the global tracker.'}
+                    </p>
+                  </div>
+                </div>
               </motion.div>
 
               {/* Form or List Card */}
               <motion.div 
                 key={`form-${activeTab}`}
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: 'easeOut' }}
+                initial={{ opacity: isLoading ? 1 : 0, y: isLoading ? 0 : 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: 'easeOut' }}
                 className="bg-white/80 backdrop-blur-2xl rounded-3xl border border-slate-200/80 shadow-[0_20px_60px_rgba(0,0,0,0.05)] overflow-hidden relative group"
               >
-                
-                <div className="px-8 py-6 border-b border-slate-100 bg-white/50 flex items-center justify-between relative z-10">
+                <div className="px-8 py-6 border-b border-slate-100 bg-white/50 flex items-center justify-between relative z-30">
                    <div className="flex items-center gap-4">
-                     <div className="p-2.5 bg-gradient-to-br from-blue-50 to-violet-50 text-blue-600 rounded-xl border border-blue-100">
-                       <List className="w-5 h-5" />
-                     </div>
-                     <h2 className="font-bold text-xl text-slate-800">
-                       {activeTab === 'builder' ? 'Active Builders' : activeTab === 'customer' ? 'Active Customers' : activeTab === 'inquiry' ? 'Recent Inquiries' : 'Active Projects'}
-                     </h2>
+                      <div className="p-2.5 bg-gradient-to-br from-blue-50 to-violet-50 text-blue-600 rounded-xl border border-blue-100">
+                        <List className="w-5 h-5" />
+                      </div>
+                      <div className="flex items-center gap-8">
+                        <h2 className="font-bold text-xl text-slate-800">
+                          {activeTab === 'builder' ? 'Active Builders' : activeTab === 'customer' ? 'Active Customers' : activeTab === 'inquiry' ? 'Recent Inquiries' : 'Active Projects'}
+                        </h2>
+                        
+                        {/* Global Company Filter Dropdown */}
+                        {(activeTab === 'builder' || activeTab === 'customer' || (activeTab === 'project' && !activeProjectSubTab)) && (
+                          <div className="hidden sm:flex items-center gap-3">
+                            <span className="text-[13px] font-bold text-slate-400 uppercase tracking-wider">Filter:</span>
+                            <CustomSelect 
+                              value={activeTab === 'builder' ? builderCompanyFilter : activeTab === 'customer' ? customerBuilderFilter : projectBuilderFilter}
+                              onChange={(val) => { 
+                                if (activeTab === 'builder') {
+                                  setBuilderCompanyFilter(val);
+                                  setBuilderPage(1);
+                                } else if (activeTab === 'customer') {
+                                  setCustomerBuilderFilter(val);
+                                  setCustomerPage(1);
+                                } else {
+                                  setProjectBuilderFilter(val);
+                                  setProjectPage(1);
+                                }
+                              }}
+                              options={[
+                                { label: 'All Companies', value: '' },
+                                ...(activeTab === 'builder' 
+                                  ? Array.from(new Set(builders.map(b => b.company_name))).sort().map(name => ({ label: name, value: name }))
+                                  : builders.map(b => ({ label: b.company_name, value: b.id }))
+                                )
+                              ]}
+                              className="min-w-[200px]"
+                              dropdownPosition="bottom"
+                            />
+                          </div>
+                        )}
+                      </div>
                    </div>
                    
                    {/* Add Button Toggles Modal */}
@@ -685,33 +994,146 @@ export default function AdminDashboard() {
                       <table className="w-full text-left border-collapse min-w-[600px]">
                         <thead>
                           <tr className="border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
-                            <th className="pb-4 px-4">Builder ID</th>
-                            <th className="pb-4 px-4">Company Name</th>
-                            <th className="pb-4 px-4">Contact</th>
+                            <th className="pb-4 px-4">
+                              <div className="flex items-center gap-2">
+                                Contact Builder
+                                <button 
+                                  onClick={() => setBuilderSort(prev => prev?.field === 'contact_name' ? (prev.order === 'asc' ? { field: 'contact_name', order: 'desc' } : null) : { field: 'contact_name', order: 'asc' })}
+                                  className="px-1.5 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-[10px] font-bold text-slate-500 transition-colors"
+                                  title="Sort Alphabetically"
+                                >
+                                  {builderSort?.field === 'contact_name' ? (builderSort.order === 'desc' ? 'Z-A' : 'A-Z') : 'Sort'}
+                                </button>
+                              </div>
+                            </th>
+                            <th className="pb-4 px-4">
+                              <div className="flex items-center gap-2">
+                                Company Name
+                                <button 
+                                  onClick={() => setBuilderSort(prev => prev?.field === 'company_name' ? (prev.order === 'asc' ? { field: 'company_name', order: 'desc' } : null) : { field: 'company_name', order: 'asc' })}
+                                  className="px-1.5 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-[10px] font-bold text-slate-500 transition-colors"
+                                  title="Sort Alphabetically"
+                                >
+                                  {builderSort?.field === 'company_name' ? (builderSort.order === 'desc' ? 'Z-A' : 'A-Z') : 'Sort'}
+                                </button>
+                              </div>
+                            </th>
                             <th className="pb-4 px-4">Email</th>
                             <th className="pb-4 px-4">Mobile No</th>
+                            <th className="pb-4 px-4 text-right">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="text-slate-700">
-                          {builders.length === 0 ? (
+                          {isLoading ? (
+                            Array.from({ length: 5 }).map((_, i) => (
+                              <tr key={`skeleton-${i}`} className="border-b border-slate-100">
+                                <td className="py-5 px-4"><div className="h-4 w-32 bg-slate-200 rounded-md animate-pulse"></div></td>
+                                <td className="py-5 px-4"><div className="h-4 w-40 bg-slate-200 rounded-md animate-pulse"></div></td>
+                                <td className="py-5 px-4"><div className="h-4 w-48 bg-slate-200 rounded-md animate-pulse"></div></td>
+                                <td className="py-5 px-4"><div className="h-4 w-28 bg-slate-200 rounded-md animate-pulse"></div></td>
+                                <td className="py-5 px-4"><div className="h-8 w-16 bg-slate-200 rounded-lg animate-pulse ml-auto"></div></td>
+                              </tr>
+                            ))
+                          ) : builders.length === 0 ? (
                             <tr>
                               <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
                                 No builders deployed yet. Click 'Add Builder' to initialize one.
                               </td>
                             </tr>
-                          ) : (
-                            builders.map((builder) => (
-                              <tr key={builder.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group">
-                                <td className="py-5 px-4 font-mono text-xs text-slate-500">{builder.id}</td>
-                                <td className="py-5 px-4 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{builder.company_name}</td>
-                                <td className="py-5 px-4 text-slate-600 font-medium">{builder.contact_name}</td>
+                          ) : (() => {
+                            const filteredBuilders = builders.filter(b => builderCompanyFilter ? b.company_name === builderCompanyFilter : true);
+                            
+                            if (filteredBuilders.length === 0) {
+                              return (
+                                <tr>
+                                  <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
+                                    No builders match the selected company.
+                                  </td>
+                                </tr>
+                              );
+                            }
+
+                            return [...filteredBuilders]
+                              .sort((a, b) => {
+                                if (!builderSort) return 0;
+                                const nameA = (a[builderSort.field] || '').toLowerCase();
+                                const nameB = (b[builderSort.field] || '').toLowerCase();
+                                if (builderSort.order === 'asc') return nameA.localeCompare(nameB);
+                                return nameB.localeCompare(nameA);
+                              })
+                              .slice((builderPage - 1) * builderPerPage, builderPage * builderPerPage)
+                              .map((builder) => (
+                              <tr 
+                                key={builder.id} 
+                                onClick={() => { setSelectedBuilder(builder); setShowBuilderDetailsModal(true); }}
+                                className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group cursor-pointer"
+                              >
+                                <td className="py-5 px-4 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{builder.contact_name}</td>
+                                <td className="py-5 px-4 text-slate-600 font-medium">{builder.company_name}</td>
                                 <td className="py-5 px-4 text-slate-600 font-medium">{builder.email}</td>
                                 <td className="py-5 px-4 text-slate-600 font-medium">{builder.phone || 'N/A'}</td>
+                                <td className="py-5 px-4 text-right">
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); setSelectedBuilder(builder); setShowBuilderDetailsModal(true); }}
+                                    className="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors"
+                                  >
+                                    View
+                                  </button>
+                                </td>
                               </tr>
-                            ))
-                          )}
+                              ));
+                          })()}
                         </tbody>
                       </table>
+                      
+                      {/* Pagination Controls */}
+                      {(() => {
+                        const filteredBuilders = builders.filter(b => builderCompanyFilter ? b.company_name === builderCompanyFilter : true);
+                        if (filteredBuilders.length === 0) return null;
+                        
+                        return (
+                          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 px-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-slate-500 font-medium">Rows per page:</span>
+                              <select
+                                value={builderPerPage}
+                                onChange={(e) => {
+                                  setBuilderPerPage(Number(e.target.value));
+                                  setBuilderPage(1);
+                                }}
+                                className="px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500"
+                              >
+                                <option value={10}>10</option>
+                                <option value={25}>25</option>
+                                <option value={50}>50</option>
+                                <option value={100}>100</option>
+                              </select>
+                            </div>
+                            
+                            <div className="flex items-center gap-4">
+                              <span className="text-sm font-medium text-slate-500">
+                                Page {builderPage} of {Math.ceil(filteredBuilders.length / builderPerPage) || 1}
+                              </span>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => setBuilderPage(p => Math.max(1, p - 1))}
+                                  disabled={builderPage === 1}
+                                  className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                  Previous
+                                </button>
+                                <button
+                                  onClick={() => setBuilderPage(p => Math.min(Math.ceil(filteredBuilders.length / builderPerPage) || 1, p + 1))}
+                                  disabled={builderPage === (Math.ceil(filteredBuilders.length / builderPerPage) || 1)}
+                                  className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                  Next
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
 
@@ -729,15 +1151,35 @@ export default function AdminDashboard() {
                           </tr>
                         </thead>
                         <tbody className="text-slate-700">
-                          {customers.length === 0 ? (
-                            <tr>
-                              <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
-                                No customers found in the network yet.
-                              </td>
-                            </tr>
-                          ) : (
-                            customers.map((customer) => (
-                              <tr key={customer.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group">
+                          {isLoading ? (
+                            Array.from({ length: 5 }).map((_, i) => (
+                              <tr key={`skeleton-${i}`} className="border-b border-slate-100">
+                                <td className="py-5 px-4"><div className="h-4 w-32 bg-slate-200 rounded-md animate-pulse"></div></td>
+                                <td className="py-5 px-4"><div className="h-4 w-40 bg-slate-200 rounded-md animate-pulse"></div></td>
+                                <td className="py-5 px-4"><div className="h-4 w-28 bg-slate-200 rounded-md animate-pulse"></div></td>
+                                <td className="py-5 px-4"><div className="h-4 w-48 bg-slate-200 rounded-md animate-pulse"></div></td>
+                                <td className="py-5 px-4"><div className="h-8 w-16 bg-slate-200 rounded-lg animate-pulse ml-auto"></div></td>
+                              </tr>
+                            ))
+                          ) : (() => {
+                            const filteredCustomers = customers.filter(c => customerBuilderFilter ? c.builder_id === customerBuilderFilter : true);
+                            
+                            if (filteredCustomers.length === 0) {
+                              return (
+                                <tr>
+                                  <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
+                                    {customers.length === 0 ? 'No customers found in the network yet.' : 'No customers match the selected company.'}
+                                  </td>
+                                </tr>
+                              );
+                            }
+
+                            return filteredCustomers.slice((customerPage - 1) * customerPerPage, customerPage * customerPerPage).map((customer) => (
+                              <tr 
+                                key={customer.id} 
+                                onClick={() => { setSelectedCustomer(customer); setShowCustomerDetailsModal(true); }}
+                                className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group cursor-pointer"
+                              >
                                 <td className="py-5 px-4 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{customer.first_name} {customer.last_name}</td>
                                 <td className="py-5 px-4 text-slate-600 font-medium">{customer.email}</td>
                                 <td className="py-5 px-4 text-slate-600 font-medium">{customer.phone || 'N/A'}</td>
@@ -746,17 +1188,66 @@ export default function AdminDashboard() {
                                 </td>
                                 <td className="py-5 px-4 text-right">
                                   <button 
-                                    onClick={() => { setSelectedCustomer(customer); setShowCustomerDetailsModal(true); }}
+                                    onClick={(e) => { e.stopPropagation(); setSelectedCustomer(customer); setShowCustomerDetailsModal(true); }}
                                     className="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors"
                                   >
                                     View
                                   </button>
                                 </td>
                               </tr>
-                            ))
-                          )}
+                            ));
+                          })()}
                         </tbody>
                       </table>
+                      
+                      {/* Pagination Controls */}
+                      {(() => {
+                        const filteredCustomers = customers.filter(c => customerBuilderFilter ? c.builder_id === customerBuilderFilter : true);
+                        if (filteredCustomers.length === 0) return null;
+                        
+                        return (
+                          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 px-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-slate-500 font-medium">Rows per page:</span>
+                              <select
+                                value={customerPerPage}
+                                onChange={(e) => {
+                                  setCustomerPerPage(Number(e.target.value));
+                                  setCustomerPage(1);
+                                }}
+                                className="px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500"
+                              >
+                                <option value={10}>10</option>
+                                <option value={25}>25</option>
+                                <option value={50}>50</option>
+                                <option value={100}>100</option>
+                              </select>
+                            </div>
+                            
+                            <div className="flex items-center gap-4">
+                              <span className="text-sm font-medium text-slate-500">
+                                Page {customerPage} of {Math.ceil(filteredCustomers.length / customerPerPage) || 1}
+                              </span>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => setCustomerPage(p => Math.max(1, p - 1))}
+                                  disabled={customerPage === 1}
+                                  className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                  Previous
+                                </button>
+                                <button
+                                  onClick={() => setCustomerPage(p => Math.min(Math.ceil(filteredCustomers.length / customerPerPage) || 1, p + 1))}
+                                  disabled={customerPage === (Math.ceil(filteredCustomers.length / customerPerPage) || 1)}
+                                  className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                  Next
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
                   {/* PROJECT LIST VIEW */}
@@ -774,15 +1265,40 @@ export default function AdminDashboard() {
                           </tr>
                         </thead>
                         <tbody className="text-slate-700">
-                          {projects.length === 0 ? (
-                            <tr>
-                              <td colSpan={6} className="py-12 text-center text-slate-500 font-medium">
-                                No projects registered in the network yet.
-                              </td>
-                            </tr>
-                          ) : (
-                            projects.map((project) => (
-                              <tr key={project.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group">
+                          {isLoading ? (
+                            Array.from({ length: 5 }).map((_, i) => (
+                              <tr key={`skeleton-${i}`} className="border-b border-slate-100">
+                                <td className="py-5 px-4"><div className="h-4 w-32 bg-slate-200 rounded-md animate-pulse"></div></td>
+                                <td className="py-5 px-4"><div className="h-4 w-40 bg-slate-200 rounded-md animate-pulse"></div></td>
+                                <td className="py-5 px-4"><div className="h-4 w-32 bg-slate-200 rounded-md animate-pulse"></div></td>
+                                <td className="py-5 px-4"><div className="h-4 w-28 bg-slate-200 rounded-md animate-pulse"></div></td>
+                                <td className="py-5 px-4"><div className="h-6 w-24 bg-slate-200 rounded-full animate-pulse ml-auto"></div></td>
+                                <td className="py-5 px-4"><div className="h-8 w-16 bg-slate-200 rounded-lg animate-pulse ml-auto"></div></td>
+                              </tr>
+                            ))
+                          ) : (() => {
+                            const filteredProjects = projects.filter(p => projectBuilderFilter ? p.builder_id === projectBuilderFilter : true);
+                            
+                            if (filteredProjects.length === 0) {
+                              return (
+                                <tr>
+                                  <td colSpan={6} className="py-12 text-center text-slate-500 font-medium">
+                                    {projects.length === 0 ? 'No projects registered in the network yet.' : 'No projects found for the selected company.'}
+                                  </td>
+                                </tr>
+                              );
+                            }
+
+                            return filteredProjects.slice((projectPage - 1) * projectPerPage, projectPage * projectPerPage).map((project) => (
+                              <tr 
+                                key={project.id} 
+                                onClick={() => { 
+                                  setSelectedProjectForSidebar(project); 
+                                  setActiveProjectSubTab('progress'); 
+                                  window.history.pushState(null, '', `/superadmin/project?projectId=${project.id}&subtab=progress`);
+                                }}
+                                className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group cursor-pointer"
+                              >
                                 <td className="py-5 px-4 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{project.project_name}</td>
                                 <td className="py-5 px-4 text-slate-600 font-medium">{project.location || 'N/A'}</td>
                                 <td className="py-5 px-4 text-slate-600 font-medium">
@@ -804,17 +1320,71 @@ export default function AdminDashboard() {
                                 </td>
                                 <td className="py-5 px-4 text-right">
                                   <button 
-                                    onClick={() => { setSelectedProjectForSidebar(project); setActiveProjectSubTab('progress'); }}
+                                    onClick={(e) => { 
+                                      e.stopPropagation(); 
+                                      setSelectedProjectForSidebar(project); 
+                                      setActiveProjectSubTab('progress'); 
+                                      window.history.pushState(null, '', `/superadmin/project?projectId=${project.id}&subtab=progress`);
+                                    }}
                                     className="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors"
                                   >
                                     View
                                   </button>
                                 </td>
                               </tr>
-                            ))
-                          )}
+                            ));
+                          })()}
                         </tbody>
                       </table>
+                      
+                      {/* Pagination Controls */}
+                      {(() => {
+                        const filteredProjects = projects.filter(p => projectBuilderFilter ? p.builder_id === projectBuilderFilter : true);
+                        if (filteredProjects.length === 0) return null;
+                        
+                        return (
+                          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 px-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-slate-500 font-medium">Rows per page:</span>
+                              <select
+                                value={projectPerPage}
+                                onChange={(e) => {
+                                  setProjectPerPage(Number(e.target.value));
+                                  setProjectPage(1);
+                                }}
+                                className="px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500"
+                              >
+                                <option value={10}>10</option>
+                                <option value={25}>25</option>
+                                <option value={50}>50</option>
+                                <option value={100}>100</option>
+                              </select>
+                            </div>
+                            
+                            <div className="flex items-center gap-4">
+                              <span className="text-sm font-medium text-slate-500">
+                                Page {projectPage} of {Math.ceil(filteredProjects.length / projectPerPage) || 1}
+                              </span>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => setProjectPage(p => Math.max(1, p - 1))}
+                                  disabled={projectPage === 1}
+                                  className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                  Previous
+                                </button>
+                                <button
+                                  onClick={() => setProjectPage(p => Math.min(Math.ceil(filteredProjects.length / projectPerPage) || 1, p + 1))}
+                                  disabled={projectPage === (Math.ceil(filteredProjects.length / projectPerPage) || 1)}
+                                  className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                  Next
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
 
@@ -1137,6 +1707,61 @@ export default function AdminDashboard() {
                     </div>
                   </form>
                 )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Builder Details Modal */}
+      <AnimatePresence>
+        {showBuilderDetailsModal && selectedBuilder && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+              <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-inner">
+                    <Building2 className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-slate-900 tracking-tight">Builder Details</h2>
+                    <p className="text-sm font-semibold text-slate-500">View comprehensive company information</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowBuilderDetailsModal(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              <div className="p-8 overflow-y-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Company Name</span>
+                    <span className="text-lg font-bold text-slate-900">{selectedBuilder.company_name}</span>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Contact Name</span>
+                    <span className="text-lg font-bold text-slate-900">{selectedBuilder.contact_name}</span>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Email Address</span>
+                    <span className="text-base font-semibold text-slate-700">{selectedBuilder.email}</span>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Mobile No</span>
+                    <span className="text-base font-semibold text-slate-700">{selectedBuilder.phone || 'N/A'}</span>
+                  </div>
+                  <div className="sm:col-span-2 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Assigned Projects</span>
+                    <span className="text-base font-semibold text-slate-700">
+                      {projects.filter(p => p.builder_id === selectedBuilder.id).length} Project(s)
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="px-8 py-5 border-t border-slate-100 bg-slate-50 flex justify-end">
+                <button onClick={() => setShowBuilderDetailsModal(false)} className="px-6 py-2.5 bg-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-300 transition-colors">
+                  Close
+                </button>
               </div>
             </motion.div>
           </motion.div>

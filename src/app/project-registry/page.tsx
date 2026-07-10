@@ -825,7 +825,7 @@ export default function BuilderDashboard() {
                   </div>
                   <div className="flex flex-col justify-center pt-2 relative z-10">
                     <h1 className="text-4xl font-black tracking-tight text-slate-900 mb-2 flex items-center gap-3">
-                      {activeTab === 'builder' ? 'Builder Matrix' : activeTab === 'customer' ? 'Customer' : 'Project'}
+                      {activeTab === 'builder' ? 'Builder ' : activeTab === 'customer' ? 'Customer' : 'Project'}
                     </h1>
                     <p className="text-sm font-semibold text-slate-500 max-w-2xl leading-relaxed">
                       {activeTab === 'builder'
