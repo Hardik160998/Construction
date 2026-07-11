@@ -103,13 +103,13 @@ function AnalysisViewer({ phases, towerName, unitType, floorNumber, onClose, onO
 
   if (phasesWithImages.length === 0) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center text-center gap-4">
-        <div className="w-24 h-24 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
-          <ImageIcon className="w-10 h-10 text-white/20" />
+      <div className="flex-1 flex flex-col items-center justify-center text-center gap-4 bg-white">
+        <div className="w-24 h-24 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center">
+          <ImageIcon className="w-10 h-10 text-slate-300" />
         </div>
-        <h3 className="text-xl font-bold text-white">No Images Uploaded</h3>
-        <p className="text-slate-400 text-sm max-w-xs">Mark phases as completed and upload proof photos to analyse them here.</p>
-        <button onClick={onClose} className="mt-2 px-6 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-colors">
+        <h3 className="text-xl font-bold text-slate-900">No Images Uploaded</h3>
+        <p className="text-slate-500 text-sm max-w-xs">Mark phases as completed and upload proof photos to analyse them here.</p>
+        <button onClick={onClose} className="mt-2 px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-colors shadow-[0_10px_20px_rgba(0,0,0,0.1)] hover:-translate-y-0.5">
           Close
         </button>
       </div>
@@ -122,27 +122,28 @@ function AnalysisViewer({ phases, towerName, unitType, floorNumber, onClose, onO
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Top bar */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-white">
         <div className="flex items-center gap-3">
+          <button onClick={onClose} className="mr-2 p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors flex items-center gap-2">
+            <ChevronLeft className="w-5 h-5" />
+            <span className="font-bold text-sm hidden sm:block">Back</span>
+          </button>
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center">
             <Camera className="w-4 h-4 text-white" />
           </div>
           <div>
-            <h2 className="text-sm font-black text-white tracking-tight">{towerName} · {unitType} {floorNumber} — Image Analysis</h2>
+            <h2 className="text-sm font-black text-slate-900 tracking-tight">{towerName} · {unitType} {floorNumber} — Image Analysis</h2>
             <p className="text-[11px] font-semibold text-slate-500">{phasesWithImages.length} phases · {totalImgs} total photos</p>
           </div>
         </div>
-        <button onClick={onClose} className="p-2 text-slate-500 hover:text-white hover:bg-white/10 rounded-xl transition-colors">
-          <X className="w-5 h-5" />
-        </button>
       </div>
 
       {/* Body: sidebar + main */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden bg-slate-50">
 
         {/* LEFT: Phase list sidebar */}
-        <div className="w-64 shrink-0 border-r border-white/10 overflow-y-auto flex flex-col gap-1 p-3">
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 px-2 pt-1 pb-2">Phases</p>
+        <div className="w-64 shrink-0 border-r border-slate-200 bg-white overflow-y-auto flex flex-col gap-1 p-3">
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 px-2 pt-1 pb-2">Phases</p>
           {phasesWithImages.map(phase => {
             const meta  = PHASE_META[phase.id] ?? { icon: Package, gradient: 'from-slate-500 to-slate-600', color: 'text-slate-400' };
             const Icon  = meta.icon;
@@ -152,14 +153,14 @@ function AnalysisViewer({ phases, towerName, unitType, floorNumber, onClose, onO
               <button
                 key={phase.id}
                 onClick={() => handlePhaseClick(phase.id)}
-                className={`w-full text-left rounded-2xl p-3 transition-all flex items-center gap-3 ${isActive ? 'bg-white/10 ring-1 ring-white/20' : 'hover:bg-white/5'}`}
+                className={`w-full text-left rounded-2xl p-3 transition-all flex items-center gap-3 ${isActive ? 'bg-slate-100 shadow-sm ring-1 ring-slate-200' : 'hover:bg-slate-50'}`}
               >
                 <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${meta.gradient} flex items-center justify-center shrink-0`}>
                   <Icon className="w-4 h-4 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-bold truncate ${isActive ? 'text-white' : 'text-slate-400'}`}>{phase.name}</p>
-                  <p className="text-[11px] text-slate-600 font-semibold">{urls.length} photo{urls.length !== 1 ? 's' : ''}</p>
+                  <p className={`text-sm font-bold truncate ${isActive ? 'text-slate-900' : 'text-slate-500'}`}>{phase.name}</p>
+                  <p className="text-[11px] text-slate-400 font-semibold">{urls.length} photo{urls.length !== 1 ? 's' : ''}</p>
                 </div>
               </button>
             );
@@ -168,13 +169,13 @@ function AnalysisViewer({ phases, towerName, unitType, floorNumber, onClose, onO
           {/* Thumbnail strip for active phase */}
           {activeUrls.length > 1 && (
             <div className="mt-3 px-2">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2">Photos</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Photos</p>
               <div className="grid grid-cols-3 gap-1.5">
                 {activeUrls.map((url, i) => (
                   <button
                     key={i}
                     onClick={() => setActiveImgIdx(i)}
-                    className={`aspect-square rounded-lg overflow-hidden border-2 transition-all ${i === activeImgIdx ? 'border-blue-400 scale-105' : 'border-white/10 opacity-50 hover:opacity-80'}`}
+                    className={`aspect-square rounded-lg overflow-hidden border-2 transition-all ${i === activeImgIdx ? 'border-blue-500 scale-105 shadow-sm' : 'border-slate-200 opacity-60 hover:opacity-100'}`}
                   >
                     <img src={url} alt="" className="w-full h-full object-cover" />
                   </button>
@@ -185,7 +186,7 @@ function AnalysisViewer({ phases, towerName, unitType, floorNumber, onClose, onO
         </div>
 
         {/* RIGHT: Hero image panel */}
-        <div className="flex-1 flex flex-col overflow-hidden relative">
+        <div className="flex-1 flex flex-col overflow-hidden relative bg-slate-50/50">
           {activePhase && activeUrls.length > 0 ? (
             <>
               {/* Main image */}
@@ -199,26 +200,26 @@ function AnalysisViewer({ phases, towerName, unitType, floorNumber, onClose, onO
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 1.02 }}
                     transition={{ duration: 0.2 }}
-                    className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl cursor-zoom-in"
+                    className="max-w-full max-h-full object-contain rounded-2xl shadow-xl border border-slate-200/60 bg-white cursor-zoom-in"
                     onClick={() => onOpenLightbox(activeUrls, activeImgIdx)}
                   />
                 </AnimatePresence>
 
                 {/* Phase info overlay — bottom left */}
-                <div className="absolute bottom-8 left-8 flex items-center gap-3 bg-black/50 backdrop-blur-md rounded-2xl px-4 py-2.5 border border-white/10">
+                <div className="absolute bottom-10 left-10 flex items-center gap-3 bg-white/90 backdrop-blur-md rounded-2xl px-4 py-2.5 border border-slate-200 shadow-sm">
                   <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${activeMeta.gradient} flex items-center justify-center shrink-0`}>
                     <ActiveIcon className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <p className="text-xs font-black text-white">{activePhase.name} Phase</p>
-                    <p className="text-[10px] text-slate-400 font-semibold">{activeImgIdx + 1} / {activeUrls.length}</p>
+                    <p className="text-xs font-black text-slate-900">{activePhase.name} Phase</p>
+                    <p className="text-[10px] text-slate-500 font-semibold">{activeImgIdx + 1} / {activeUrls.length}</p>
                   </div>
                 </div>
 
                 {/* Open full screen button — top right */}
                 <button
                   onClick={() => onOpenLightbox(activeUrls, activeImgIdx)}
-                  className="absolute top-8 right-8 p-2.5 bg-black/40 hover:bg-black/60 backdrop-blur-md text-white rounded-xl border border-white/10 transition-colors"
+                  className="absolute top-10 right-10 p-2.5 bg-white/90 hover:bg-white backdrop-blur-md text-slate-700 rounded-xl border border-slate-200 shadow-sm transition-colors"
                   title="Open full screen"
                 >
                   <ExternalLink className="w-4 h-4" />
@@ -229,13 +230,13 @@ function AnalysisViewer({ phases, towerName, unitType, floorNumber, onClose, onO
                   <>
                     <button
                       onClick={prev}
-                      className="absolute left-8 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/40 hover:bg-black/70 backdrop-blur-md text-white rounded-full border border-white/10 flex items-center justify-center transition-colors"
+                      className="absolute left-10 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white backdrop-blur-md text-slate-700 rounded-full border border-slate-200 shadow-sm flex items-center justify-center transition-colors"
                     >
                       <ChevronLeft className="w-5 h-5" />
                     </button>
                     <button
                       onClick={next}
-                      className="absolute right-8 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/40 hover:bg-black/70 backdrop-blur-md text-white rounded-full border border-white/10 flex items-center justify-center transition-colors"
+                      className="absolute right-10 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white backdrop-blur-md text-slate-700 rounded-full border border-slate-200 shadow-sm flex items-center justify-center transition-colors"
                     >
                       <ChevronRight className="w-5 h-5" />
                     </button>
@@ -250,7 +251,7 @@ function AnalysisViewer({ phases, towerName, unitType, floorNumber, onClose, onO
                     <button
                       key={i}
                       onClick={() => setActiveImgIdx(i)}
-                      className={`rounded-full transition-all ${i === activeImgIdx ? 'w-5 h-1.5 bg-blue-400' : 'w-1.5 h-1.5 bg-white/20 hover:bg-white/40'}`}
+                      className={`rounded-full transition-all ${i === activeImgIdx ? 'w-5 h-1.5 bg-blue-500' : 'w-1.5 h-1.5 bg-slate-300 hover:bg-slate-400'}`}
                     />
                   ))}
                 </div>
@@ -605,7 +606,7 @@ export default function TowerProgress({ towerId, towerName, floorNumber, onBack,
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[110] bg-slate-950/95 backdrop-blur-sm flex flex-col"
+            className="fixed inset-0 z-[110] bg-white/95 backdrop-blur-sm flex flex-col"
           >
             <AnalysisViewer
               phases={phases}

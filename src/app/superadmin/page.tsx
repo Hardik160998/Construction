@@ -145,8 +145,10 @@ export default function AdminDashboard() {
   const [projectPage, setProjectPage] = useState(1);
   const [projectPerPage, setProjectPerPage] = useState(10);
   const [projectBuilderFilter, setProjectBuilderFilter] = useState('');
+  const [projectNameFilter, setProjectNameFilter] = useState('');
   const [builderCompanyFilter, setBuilderCompanyFilter] = useState('');
   const [customerBuilderFilter, setCustomerBuilderFilter] = useState('');
+  const [customerTowerFilter, setCustomerTowerFilter] = useState('');
   const [builderSort, setBuilderSort] = useState<{ field: 'company_name' | 'contact_name', order: 'asc' | 'desc' } | null>(null);
 
   // Form States
@@ -1001,10 +1003,12 @@ export default function AdminDashboard() {
                           {activeTab === 'builder' ? 'Active Builders' : activeTab === 'customer' ? 'Active Customers' : activeTab === 'inquiry' ? 'Recent Inquiries' : 'Active Projects'}
                         </h2>
                         
-                        {/* Global Company Filter Dropdown */}
+                        {/* Global Filter Dropdowns */}
                         {(activeTab === 'builder' || activeTab === 'customer' || (activeTab === 'project' && !activeProjectSubTab)) && (
                           <div className="hidden sm:flex items-center gap-3">
                             <span className="text-[13px] font-bold text-slate-400 uppercase tracking-wider">Filter:</span>
+                            
+                            {/* Company Filter (for all 3 tabs) */}
                             <CustomSelect 
                               value={activeTab === 'builder' ? builderCompanyFilter : activeTab === 'customer' ? customerBuilderFilter : projectBuilderFilter}
                               onChange={(val) => { 
@@ -1013,9 +1017,11 @@ export default function AdminDashboard() {
                                   setBuilderPage(1);
                                 } else if (activeTab === 'customer') {
                                   setCustomerBuilderFilter(val);
+                                  setCustomerTowerFilter('');
                                   setCustomerPage(1);
                                 } else {
                                   setProjectBuilderFilter(val);
+                                  setProjectNameFilter('');
                                   setProjectPage(1);
                                 }
                               }}
@@ -1029,6 +1035,49 @@ export default function AdminDashboard() {
                               className="min-w-[200px]"
                               dropdownPosition="bottom"
                             />
+
+                            {/* Tower Filter (only for Customer tab) */}
+                            {activeTab === 'customer' && (
+                              <CustomSelect 
+                                value={customerTowerFilter}
+                                onChange={(val) => {
+                                  setCustomerTowerFilter(val);
+                                  setCustomerPage(1);
+                                }}
+                                options={[
+                                  { label: 'All Towers/Sections', value: '' },
+                                  ...Array.from(new Set(
+                                    customers
+                                      .filter(c => customerBuilderFilter ? c.builder_id === customerBuilderFilter : true)
+                                      .map(c => c.tower_name)
+                                      .filter(Boolean)
+                                  )).sort().map(name => ({ label: name, value: name }))
+                                ]}
+                                className="min-w-[200px]"
+                                dropdownPosition="bottom"
+                              />
+                            )}
+
+                            {/* Project Filter (only for Project tab) */}
+                            {activeTab === 'project' && (
+                              <CustomSelect 
+                                value={projectNameFilter}
+                                onChange={(val) => {
+                                  setProjectNameFilter(val);
+                                  setProjectPage(1);
+                                }}
+                                options={[
+                                  { label: 'All Projects', value: '' },
+                                  ...Array.from(new Set(
+                                    projects
+                                      .filter(p => projectBuilderFilter ? p.builder_id === projectBuilderFilter : true)
+                                      .map(p => p.project_name)
+                                  )).sort().map(name => ({ label: name, value: name }))
+                                ]}
+                                className="min-w-[200px]"
+                                dropdownPosition="bottom"
+                              />
+                            )}
                           </div>
                         )}
                       </div>
@@ -1225,13 +1274,16 @@ export default function AdminDashboard() {
                               </tr>
                             ))
                           ) : (() => {
-                            const filteredCustomers = customers.filter(c => customerBuilderFilter ? c.builder_id === customerBuilderFilter : true);
+                            let filteredCustomers = customers.filter(c => customerBuilderFilter ? c.builder_id === customerBuilderFilter : true);
+                            if (customerTowerFilter) {
+                              filteredCustomers = filteredCustomers.filter(c => c.tower_name === customerTowerFilter);
+                            }
                             
                             if (filteredCustomers.length === 0) {
                               return (
                                 <tr>
                                   <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
-                                    {customers.length === 0 ? 'No customers found in the network yet.' : 'No customers match the selected company.'}
+                                    No customers match the selected filters.
                                   </td>
                                 </tr>
                               );
@@ -1265,7 +1317,10 @@ export default function AdminDashboard() {
                       
                       {/* Pagination Controls */}
                       {(() => {
-                        const filteredCustomers = customers.filter(c => customerBuilderFilter ? c.builder_id === customerBuilderFilter : true);
+                        let filteredCustomers = customers.filter(c => customerBuilderFilter ? c.builder_id === customerBuilderFilter : true);
+                        if (customerTowerFilter) {
+                          filteredCustomers = filteredCustomers.filter(c => c.tower_name === customerTowerFilter);
+                        }
                         if (filteredCustomers.length === 0) return null;
                         
                         return (
@@ -1340,13 +1395,16 @@ export default function AdminDashboard() {
                               </tr>
                             ))
                           ) : (() => {
-                            const filteredProjects = projects.filter(p => projectBuilderFilter ? p.builder_id === projectBuilderFilter : true);
+                            let filteredProjects = projects.filter(p => projectBuilderFilter ? p.builder_id === projectBuilderFilter : true);
+                            if (projectNameFilter) {
+                              filteredProjects = filteredProjects.filter(p => p.project_name === projectNameFilter);
+                            }
                             
                             if (filteredProjects.length === 0) {
                               return (
                                 <tr>
                                   <td colSpan={6} className="py-12 text-center text-slate-500 font-medium">
-                                    {projects.length === 0 ? 'No projects registered in the network yet.' : 'No projects found for the selected company.'}
+                                    No projects match the selected filters.
                                   </td>
                                 </tr>
                               );
@@ -1402,7 +1460,10 @@ export default function AdminDashboard() {
                       
                       {/* Pagination Controls */}
                       {(() => {
-                        const filteredProjects = projects.filter(p => projectBuilderFilter ? p.builder_id === projectBuilderFilter : true);
+                        let filteredProjects = projects.filter(p => projectBuilderFilter ? p.builder_id === projectBuilderFilter : true);
+                        if (projectNameFilter) {
+                          filteredProjects = filteredProjects.filter(p => p.project_name === projectNameFilter);
+                        }
                         if (filteredProjects.length === 0) return null;
                         
                         return (
@@ -1483,14 +1544,18 @@ export default function AdminDashboard() {
                             </tr>
                           ) : (
                             inquiries.map((inq) => (
-                              <tr key={inq.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group">
+                              <tr 
+                                key={inq.id} 
+                                onClick={() => { setSelectedInquiry(inq); setShowInquiryDetailsModal(true); }}
+                                className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors group cursor-pointer"
+                              >
                                 <td className="py-5 px-4 font-mono text-xs text-slate-500">{new Date(inq.created_at).toLocaleDateString()}</td>
                                 <td className="py-5 px-4 font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{inq.first_name} {inq.last_name}</td>
                                 <td className="py-5 px-4 text-slate-600 font-medium">{inq.email}</td>
                                 <td className="py-5 px-4 text-slate-600 font-medium">{inq.company_name || 'N/A'}</td>
                                 <td className="py-5 px-4 text-right">
                                   <button 
-                                    onClick={() => { setSelectedInquiry(inq); setShowInquiryDetailsModal(true); }}
+                                    onClick={(e) => { e.stopPropagation(); setSelectedInquiry(inq); setShowInquiryDetailsModal(true); }}
                                     className="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors"
                                   >
                                     View
@@ -1517,10 +1582,12 @@ export default function AdminDashboard() {
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
             className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 sm:p-8"
+            onClick={() => { setShowBuilderForm(false); setShowCustomerForm(false); setShowProjectForm(false); setError(''); setSuccess(false); }}
           >
             <motion.div 
               initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 10 }} transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
               className="bg-white w-full max-w-3xl rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden flex flex-col max-h-full"
+              onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
               <div className="px-8 py-6 border-b border-slate-100 bg-slate-50 flex items-center justify-between shrink-0">
@@ -1789,8 +1856,8 @@ export default function AdminDashboard() {
       {/* Builder Details Modal */}
       <AnimatePresence>
         {showBuilderDetailsModal && selectedBuilder && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+          <motion.div onClick={() => setShowBuilderDetailsModal(false)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <motion.div onClick={(e) => e.stopPropagation()} initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
               <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-inner">
@@ -1844,8 +1911,8 @@ export default function AdminDashboard() {
       {/* Customer Details Modal */}
       <AnimatePresence>
         {showCustomerDetailsModal && selectedCustomer && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+          <motion.div onClick={() => setShowCustomerDetailsModal(false)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <motion.div onClick={(e) => e.stopPropagation()} initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
               <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-inner">
@@ -1905,8 +1972,8 @@ export default function AdminDashboard() {
       {/* Add Tower Modal */}
       <AnimatePresence>
         {showTowerForm && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+          <motion.div onClick={() => setShowTowerForm(false)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <motion.div onClick={(e) => e.stopPropagation()} initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
               <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-inner">
@@ -1971,8 +2038,8 @@ export default function AdminDashboard() {
       {/* Add Announcement Modal */}
       <AnimatePresence>
         {showAnnouncementForm && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+          <motion.div onClick={() => setShowAnnouncementForm(false)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+            <motion.div onClick={(e) => e.stopPropagation()} initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
               <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center shadow-inner">
@@ -2038,10 +2105,12 @@ export default function AdminDashboard() {
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
             className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 sm:p-8"
+            onClick={() => setShowAnnouncementDetailsModal(false)}
           >
             <motion.div 
               initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 10 }} transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
               className="bg-white w-full max-w-lg rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden flex flex-col"
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="px-8 py-6 border-b border-slate-100 bg-slate-50 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-4">
@@ -2080,10 +2149,12 @@ export default function AdminDashboard() {
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
             className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 sm:p-8"
+            onClick={() => setShowInquiryDetailsModal(false)}
           >
             <motion.div 
               initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 10 }} transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
               className="bg-white w-full max-w-lg rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.1)] border border-slate-200 overflow-hidden flex flex-col"
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="px-8 py-6 border-b border-slate-100 bg-slate-50 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-4">
