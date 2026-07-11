@@ -8,6 +8,7 @@ import { usePathname } from 'next/navigation';
 import CustomSelect from '@/components/CustomSelect';
 import FloorList from '@/components/FloorList';
 import TowerProgress from '@/components/TowerProgress';
+import ProjectImageAnalysisView from '@/components/ProjectImageAnalysisView';
 
 // ── Shimmer Skeletons ──────────────────────────────────────────────────────────
 const FloorListSkeleton = () => (
@@ -530,8 +531,8 @@ export default function AdminDashboard() {
 
   const menuItems = [
     { id: 'builder', label: 'Builder', icon: HardHat },
-    { id: 'customer', label: 'Customer', icon: Users },
     { id: 'project', label: 'Project', icon: MapPin },
+    { id: 'customer', label: 'Customer', icon: Users },
     { id: 'inquiry', label: 'Inquiries', icon: MessageSquare }
   ] as const;
 
@@ -676,54 +677,84 @@ export default function AdminDashboard() {
                             window.history.pushState(null, '', `/superadmin/project?projectId=${selectedProjectForSidebar?.id || selectedProjectForSidebar?._id}&subtab=staff`);
                           }} className={`w-full flex items-center gap-4 px-4 py-3 relative z-10 group transition-all rounded-xl ${activeProjectSubTab === 'staff' ? 'bg-blue-50/50' : ''}`}>
                             <div className="bg-[#f4f7f9] z-10 relative"><Users className={`w-[18px] h-[18px] transition-colors ${activeProjectSubTab === 'staff' ? 'text-blue-600' : 'text-slate-500 group-hover:text-blue-500'}`} /></div>
-                            <span className={`text-[14.5px] font-bold transition-colors ${activeProjectSubTab === 'staff' ? 'text-blue-700' : 'text-slate-600 group-hover:text-slate-800'}`}>Sta        {/* Content Area */}
+                            <span className={`text-[14.5px] font-bold transition-colors ${activeProjectSubTab === 'staff' ? 'text-blue-700' : 'text-slate-600 group-hover:text-slate-800'}`}>Staff</span>
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
+          </div>
+        </aside>
+
+        {/* Content Area */}
         <main className="flex-1 overflow-y-auto p-8 lg:p-12 relative">
            <div className="w-full max-w-none">
               
               {activeProjectSubTab && selectedProjectForSidebar ? (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6 mt-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+                  {activeProjectSubTab !== 'tower_view' && (
+                  <div className="flex items-center justify-between bg-white/60 backdrop-blur-xl border border-slate-200/60 rounded-3xl p-5 shadow-sm">
+                    <div className="flex items-center gap-5">
                       <button onClick={() => {
-                        setActiveProjectSubTab(null);
-                        window.history.pushState(null, '', `/superadmin/project?projectId=${selectedProjectForSidebar?.id || selectedProjectForSidebar?._id}`);
-                      }} className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-slate-700 shadow-sm transition-colors">
-                        <ChevronRight className="w-5 h-5 rotate-180" />
+                        if (showProjectImgAnalysis) {
+                          setShowProjectImgAnalysis(false);
+                        } else {
+                          setActiveProjectSubTab(null);
+                          window.history.pushState(null, '', `/superadmin/project?projectId=${selectedProjectForSidebar?.id || selectedProjectForSidebar?._id}`);
+                        }
+                      }} className="w-12 h-12 flex items-center justify-center bg-white border border-slate-200 rounded-2xl text-slate-500 hover:text-indigo-600 hover:border-indigo-200 shadow-sm transition-all group shrink-0">
+                        <ChevronRight className="w-5 h-5 rotate-180 group-hover:-translate-x-0.5 transition-transform" />
                       </button>
-                      {activeProjectSubTab !== 'tower_view' && (
+                      
+                      <div className="flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-inner ${
+                          activeProjectSubTab === 'announcement' 
+                            ? 'bg-gradient-to-br from-indigo-100 to-blue-50 text-indigo-600' 
+                            : activeProjectSubTab === 'staff'
+                            ? 'bg-gradient-to-br from-emerald-100 to-teal-50 text-emerald-600'
+                            : 'bg-gradient-to-br from-violet-100 to-fuchsia-50 text-violet-600'
+                        }`}>
+                          {activeProjectSubTab === 'announcement' ? <Megaphone className="w-6 h-6" /> : activeProjectSubTab === 'staff' ? <Briefcase className="w-6 h-6" /> : <Building className="w-6 h-6" />}
+                        </div>
                         <div>
-                          <h2 className="text-2xl font-extrabold text-slate-900 capitalize flex items-center gap-2">
+                          <h2 className="text-2xl font-black text-slate-900 tracking-tight capitalize flex items-center gap-2">
                             {activeProjectSubTab === 'announcement' ? 'Announcements' : selectedProjectForSidebar.project_name}
                           </h2>
-                          <p className="text-sm font-medium text-slate-500 mt-1">
-                            {activeProjectSubTab === 'announcement' ? 'View announcements for this project' : (
-                              <>Location: <span className="font-semibold text-slate-700">{selectedProjectForSidebar.location || 'N/A'}</span></>
+                          <p className="text-sm font-semibold text-slate-500 mt-0.5 flex items-center gap-1.5">
+                            {activeProjectSubTab === 'announcement' ? (
+                              'View announcements for this project'
+                            ) : (
+                              <>
+                                <MapPin className="w-3.5 h-3.5" /> 
+                                <span>{selectedProjectForSidebar.location || 'Location N/A'}</span>
+                              </>
                             )}
                           </p>
                         </div>
-                      )}
+                      </div>
                     </div>
-                    {activeProjectSubTab === 'progress' && towers.length > 0 && (
+                    
+                    {activeProjectSubTab === 'progress' && !showProjectImgAnalysis && towers.length > 0 && (
                       <button
                         onClick={() => setShowProjectImgAnalysis(true)}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 text-white text-sm font-bold shadow-md transition-all"
+                        className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white text-sm font-bold shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all"
                       >
                         <Camera className="w-4 h-4" />
                         Img Analysis
                       </button>
                     )}
                   </div>
-n className="font-semibold text-slate-700">{selectedProjectForSidebar.location || 'N/A'}</span></>
-                            )}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  )}
+
 
                   {activeProjectSubTab === 'progress' ? (
-                    isTowersLoading ? (
-                      <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    showProjectImgAnalysis ? (
+                      <ProjectImageAnalysisView project={selectedProjectForSidebar} />
+                    ) : isTowersLoading ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {Array.from({ length: 3 }).map((_, i) => (
                           <div key={i} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center justify-between">
                             <div className="flex items-center gap-4">
@@ -741,7 +772,7 @@ n className="font-semibold text-slate-700">{selectedProjectForSidebar.location |
                         ))}
                       </div>
                     ) : towers.length > 0 ? (
-                      <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {towers.map(tower => (
                           <div 
                             key={tower.id} 
@@ -833,26 +864,60 @@ n className="font-semibold text-slate-700">{selectedProjectForSidebar.location |
                       )}
                     </div>
                     )
-                  ) : activeProjectSubTab === 'announcement' && announcements.length > 0 ? (
-                    <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {announcements.map((ann) => (
-                        <div key={ann.id} onClick={() => { setSelectedAnnouncement(ann); setShowAnnouncementDetailsModal(true); }} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group flex flex-col justify-between cursor-pointer hover:border-indigo-300">
-                          <div>
-                            <div className="flex justify-between items-start mb-4">
-                              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 text-[11px] font-bold uppercase tracking-wider rounded-xl">
-                                <Megaphone className="w-3.5 h-3.5" />
-                                {projects.find(p => p.id === ann.project_id)?.project_name || selectedProjectForSidebar?.project_name || 'Unknown Project'}
+                  ) : activeProjectSubTab === 'announcement' ? (
+                    announcements.length > 0 ? (
+                      <motion.div 
+                        initial="hidden" 
+                        animate="visible" 
+                        variants={{
+                          hidden: { opacity: 0 },
+                          visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+                        }}
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                      >
+                        {announcements.map((ann) => (
+                          <motion.div 
+                            variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+                            key={ann.id} 
+                            onClick={() => { setSelectedAnnouncement(ann); setShowAnnouncementDetailsModal(true); }} 
+                            className="relative bg-white/80 backdrop-blur-xl border border-slate-200/80 rounded-3xl p-7 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-300 group cursor-pointer overflow-hidden flex flex-col justify-between min-h-[220px] hover:-translate-y-1 hover:border-indigo-300/50"
+                          >
+                            {/* Decorative background glow */}
+                            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-indigo-500/10 to-purple-500/5 rounded-full blur-3xl group-hover:from-indigo-500/20 group-hover:to-purple-500/10 transition-colors pointer-events-none -mr-12 -mt-12" />
+                            
+                            <div className="relative z-10">
+                              <div className="flex justify-between items-start mb-5">
+                                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-gradient-to-r from-indigo-50 to-blue-50 text-indigo-700 text-[10px] font-black uppercase tracking-widest rounded-xl shadow-sm border border-indigo-100/50">
+                                  <Megaphone className="w-3.5 h-3.5" />
+                                  <span className="truncate max-w-[120px]">{projects.find(p => p.id === ann.project_id)?.project_name || selectedProjectForSidebar?.project_name || 'Project'}</span>
+                                </div>
+                                <span className="text-[11px] font-bold text-slate-500 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100 shadow-sm">
+                                  {ann.created_at ? new Date(ann.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : ann.date}
+                                </span>
                               </div>
-                              <span className="text-xs font-bold text-slate-400 mt-1">{ann.created_at ? new Date(ann.created_at).toLocaleDateString() : ann.date}</span>
+                              <h3 className="text-xl font-extrabold text-slate-900 mb-3 leading-tight group-hover:text-indigo-700 transition-colors line-clamp-2">{ann.title}</h3>
+                              <p className="text-sm font-medium text-slate-500 leading-relaxed line-clamp-3">{ann.message}</p>
                             </div>
-                            <h3 className="text-lg font-bold text-slate-900 mb-2">{ann.title}</h3>
-                            <p className="text-sm font-medium text-slate-600 line-clamp-3">{ann.message}</p>
-                          </div>
+                            
+                            <div className="relative z-10 mt-6 pt-4 border-t border-slate-100/80 flex items-center justify-between">
+                              <span className="text-xs font-bold text-indigo-600 flex items-center gap-1 group-hover:gap-2 transition-all">
+                                Read Announcement <ChevronRight className="w-3.5 h-3.5" />
+                              </span>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </motion.div>
+                    ) : (
+                      <div className="bg-white/50 backdrop-blur-sm border border-slate-200/60 rounded-3xl p-12 flex flex-col items-center justify-center text-center">
+                        <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                          <Megaphone className="w-10 h-10 text-indigo-400" />
                         </div>
-                      ))}
-                    </div>
+                        <h3 className="text-xl font-extrabold text-slate-900 mb-2">No Announcements</h3>
+                        <p className="text-sm font-medium text-slate-500 max-w-sm">There are no announcements for this project yet.</p>
+                      </div>
+                    )
                   ) : activeProjectSubTab === 'staff' && staffList.length > 0 ? (
-                    <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                       {staffList.map((staff) => (
                         <div key={staff.id} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group flex flex-col justify-between cursor-default">
                           <div>
@@ -873,11 +938,9 @@ n className="font-semibold text-slate-700">{selectedProjectForSidebar.location |
                       ))}
                     </div>
                   ) : (
-                    <div className="mt-8 flex items-center justify-center min-h-[400px]">
+                    <div className="flex items-center justify-center min-h-[400px]">
                       <p className="text-center text-slate-400/80 font-medium text-lg tracking-wide">
-                        {activeProjectSubTab === 'announcement' 
-                          ? 'No announcement records found for this project.'
-                          : activeProjectSubTab === 'staff'
+                        {activeProjectSubTab === 'staff'
                           ? 'No staff members assigned to this project yet.'
                           : `No ${activeProjectSubTab} records found for this project.`}
                       </p>
@@ -1402,7 +1465,17 @@ n className="font-semibold text-slate-700">{selectedProjectForSidebar.location |
                           </tr>
                         </thead>
                         <tbody className="text-slate-700">
-                          {inquiries.length === 0 ? (
+                          {isLoading ? (
+                            Array.from({ length: 5 }).map((_, i) => (
+                              <tr key={`skeleton-inquiry-${i}`} className="border-b border-slate-100">
+                                <td className="py-5 px-4"><div className="h-4 w-24 bg-slate-200 rounded-md animate-pulse"></div></td>
+                                <td className="py-5 px-4"><div className="h-4 w-32 bg-slate-200 rounded-md animate-pulse"></div></td>
+                                <td className="py-5 px-4"><div className="h-4 w-48 bg-slate-200 rounded-md animate-pulse"></div></td>
+                                <td className="py-5 px-4"><div className="h-4 w-32 bg-slate-200 rounded-md animate-pulse"></div></td>
+                                <td className="py-5 px-4"><div className="h-8 w-16 bg-slate-200 rounded-lg animate-pulse ml-auto"></div></td>
+                              </tr>
+                            ))
+                          ) : inquiries.length === 0 ? (
                             <tr>
                               <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
                                 No inquiries found.

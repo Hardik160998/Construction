@@ -4,7 +4,7 @@ import {
   Building2, LayoutGrid, UploadCloud, Image as ImageIcon,
   Camera, X, CheckCircle2, Layers, Zap, Droplets,
   HardHat, Wrench, Package, Home, ExternalLink,
-  ChevronLeft, ChevronRight, ZoomIn
+  ChevronLeft, ChevronRight, ZoomIn, ArrowLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -32,15 +32,15 @@ const PHASE_META: Record<string, { icon: React.ElementType; color: string; gradi
 
 
 const PHASES_DEFAULT = [
-  { id: 'foundation', name: 'Foundation',  progress: 0, imageUrl: null },
-  { id: 'structure',  name: 'Structure',   progress: 0, imageUrl: null },
-  { id: 'brickwork',  name: 'Brickwork',   progress: 0, imageUrl: null },
-  { id: 'plastering', name: 'Plastering',  progress: 0, imageUrl: null },
-  { id: 'electrical', name: 'Electrical',  progress: 0, imageUrl: null },
-  { id: 'plumbing',   name: 'Plumbing',    progress: 0, imageUrl: null },
-  { id: 'flooring',   name: 'Flooring',    progress: 0, imageUrl: null },
-  { id: 'painting',   name: 'Painting',    progress: 0, imageUrl: null },
-  { id: 'handover',   name: 'Handover',    progress: 0, imageUrl: null },
+  { id: 'foundation', name: 'Foundation',  progress: 0, imageUrl: null as string | null },
+  { id: 'structure',  name: 'Structure',   progress: 0, imageUrl: null as string | null },
+  { id: 'brickwork',  name: 'Brickwork',   progress: 0, imageUrl: null as string | null },
+  { id: 'plastering', name: 'Plastering',  progress: 0, imageUrl: null as string | null },
+  { id: 'electrical', name: 'Electrical',  progress: 0, imageUrl: null as string | null },
+  { id: 'plumbing',   name: 'Plumbing',    progress: 0, imageUrl: null as string | null },
+  { id: 'flooring',   name: 'Flooring',    progress: 0, imageUrl: null as string | null },
+  { id: 'painting',   name: 'Painting',    progress: 0, imageUrl: null as string | null },
+  { id: 'handover',   name: 'Handover',    progress: 0, imageUrl: null as string | null },
 ];
 
 function parseImageUrls(imageUrl: string | null): string[] {
@@ -354,6 +354,9 @@ export default function TowerProgress({ towerId, towerName, floorNumber, onBack,
         <div className="relative z-10 p-7 flex flex-col sm:flex-row sm:items-center gap-6 justify-between">
           {/* Left: identity */}
           <div className="flex items-center gap-5">
+            <button onClick={onBack} className="w-12 h-12 flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/10 rounded-2xl text-slate-300 hover:text-white hover:border-white/20 shadow-sm transition-all group shrink-0 backdrop-blur-md">
+              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
+            </button>
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center shadow-[0_8px_24px_rgba(99,102,241,0.4)] shrink-0">
               <Building2 className="w-8 h-8 text-white" />
             </div>

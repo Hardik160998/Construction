@@ -61,6 +61,9 @@ export default function FloorList({ towerId, towerName, totalFloors, onSelectFlo
         <div className="absolute bottom-0 left-10 w-40 h-40 bg-gradient-to-tr from-emerald-50/30 to-transparent rounded-full blur-2xl translate-y-1/3 pointer-events-none" />
         
         <div className="flex items-center gap-6 relative z-10">
+          <button onClick={onBack} className="w-12 h-12 flex items-center justify-center bg-white/80 border border-slate-200/80 rounded-2xl text-slate-500 hover:text-indigo-600 hover:border-indigo-200 hover:bg-white shadow-sm transition-all group shrink-0 backdrop-blur-md">
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
+          </button>
           <div className="flex items-center gap-5">
             <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-blue-600 text-white rounded-2xl flex items-center justify-center shadow-[0_8px_20px_rgba(79,70,229,0.3)] shrink-0">
               <Building2 className="w-7 h-7" />
